@@ -158,9 +158,10 @@ export default function TextHighlighted() {
       st = ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: () => `+=${section.offsetHeight * 1.8}`,
-        scrub: 1.0,
+        end: () => `+=${section.offsetHeight * 1.2}`,
+        scrub: 0.4,
         pin: true,
+        anticipatePin: 1,
         onUpdate(self) {
           const p    = self.progress;
           const gold = goldRef.current;

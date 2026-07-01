@@ -337,24 +337,27 @@ export default function KineticMaskHero({
 
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      const navElement = target.closest("nav");
-      if (navElement) {
-        const isLogoClick =
-          target.closest("span") &&
-          (target.textContent?.includes("Sun") ||
-            target.textContent?.includes("Nest"));
-        if (isLogoClick) {
-          setMediaFullyExpanded(false);
-          onExpansionChangeRef.current?.(false);
-          progressVal.set(0);
-          targetProgress.current = 0;
-        } else {
-          setMediaFullyExpanded(true);
-          onExpansionChangeRef.current?.(true);
-          progressVal.set(1.0 + SCROLL_HOLD_BUFFER);
-          targetProgress.current = 1.0 + SCROLL_HOLD_BUFFER;
-        }
+      if (!target.closest("nav")) return;
+
+      // Logo: reset the hero to start
+      const logoSpan = target.closest("span");
+      if (logoSpan && (logoSpan.textContent?.includes("Sun") || logoSpan.textContent?.includes("Nest"))) {
+        setMediaFullyExpanded(false);
+        onExpansionChangeRef.current?.(false);
+        progressVal.set(0);
+        targetProgress.current = 0;
+        return;
       }
+
+      // Only expand to full screen for nav-link button clicks (inside <ul>).
+      // Theme toggle and hamburger live in a sibling <div>, not in <ul>,
+      // so they are intentionally excluded here.
+      if (!target.closest("ul")) return;
+
+      setMediaFullyExpanded(true);
+      onExpansionChangeRef.current?.(true);
+      progressVal.set(1.0 + SCROLL_HOLD_BUFFER);
+      targetProgress.current = 1.0 + SCROLL_HOLD_BUFFER;
     };
 
     const handleTouchEnd = () => setTouchStartY(0);
@@ -527,35 +530,6 @@ export default function KineticMaskHero({
           {/* Luxury blue duotone overlay */}
           <rect width="1000" height="1000" fill="#0A1628" opacity="0.90" />
         </g>
-
-        {/* ── 3D Architectural Shadow (above cover, fades on zoom) ── */}
-        <motion.g style={{ transformOrigin, scale, opacity: bgOpacity }}>
-          <text
-            x="505"
-            y={isMobile ? "435" : "475"}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="#050C16"
-            className="font-sans font-black tracking-tighter opacity-80"
-            style={{
-              fontSize: isMobile ? "90px" : "125px",
-              letterSpacing: isMobile ? "-1px" : "-2px",
-            }}
-          >
-            SUNNEST
-          </text>
-          <text
-            x="512"
-            y={isMobile ? "510" : "550"}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="#050C16"
-            className="font-sans font-bold tracking-[0.35em] opacity-80"
-            style={{ fontSize: isMobile ? "45px" : "65px" }}
-          >
-            POWER
-          </text>
-        </motion.g>
 
         {/* ── Liquid Gold Outline (desktop only — gold stroke bleeds visually on mobile) ── */}
         {!isMobile && <motion.g style={{ transformOrigin, scale, opacity: bgOpacity }}>
