@@ -103,6 +103,7 @@ export default function ContactUsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.65 }}
+          style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}
         >
           <span style={{
             display: "block", fontSize: "0.68rem", fontWeight: 800,
@@ -122,7 +123,7 @@ export default function ContactUsSection() {
           </h2>
           <p style={{
             fontSize: "0.92rem", lineHeight: 1.7, color: pageText55,
-            maxWidth: "520px", margin: 0, transition: "color 0.4s ease",
+            maxWidth: "520px", margin: "0 0 20px 0", transition: "color 0.4s ease",
           }}>
             Have questions about solar? Our engineers are ready to answer anything — from system sizing to subsidies. We typically respond within 2 hours.
           </p>

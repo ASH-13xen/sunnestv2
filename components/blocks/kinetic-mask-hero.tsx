@@ -326,7 +326,6 @@ export default function KineticMaskHero({
           playsInline
           className="absolute inset-0 z-10 w-full h-full object-cover"
           disablePictureInPicture
-          // @ts-expect-error – non-standard but supported in Safari
           disableRemotePlayback
         />
       )}

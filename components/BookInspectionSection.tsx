@@ -132,7 +132,7 @@ export default function BookInspectionSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.65 }}
-        style={{ maxWidth: "1060px", margin: "0 auto 52px" }}
+        style={{ maxWidth: "1060px", margin: "0 auto 52px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}
       >
         <span style={{
           display: "block", fontSize: "0.68rem", fontWeight: 800,

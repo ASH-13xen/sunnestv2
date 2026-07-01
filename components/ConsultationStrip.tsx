@@ -53,13 +53,13 @@ export default function ConsultationStrip() {
           maxWidth: "1100px",
           margin: "0 auto",
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "space-between",
+          textAlign: "center",
           gap: "24px",
         }}
       >
-        <div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
           <span
             style={{
               display: "block",
@@ -84,11 +84,11 @@ export default function ConsultationStrip() {
           >
             Book Your First Consultation — On Us
           </h2>
-          <p style={{ fontSize: "0.92rem", color: "rgba(255,255,255,0.55)", margin: "8px 0 0", maxWidth: "480px", lineHeight: 1.6 }}>
+          <p style={{ fontSize: "0.92rem", color: "rgba(255,255,255,0.55)", margin: "8px 0 0", maxWidth: "580px", lineHeight: 1.6 }}>
             Talk to a solar expert, get a free site assessment, and see exactly how much you could save.
           </p>
         </div>
-
+ 
         <a
           href="#contact"
           style={{

@@ -212,10 +212,13 @@ export default function ProcessSection() {
           padding:    "var(--section-padding-top) clamp(28px, 6vw, 80px) 28px",
           flexShrink: 0,
           display:    "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          gap:        "24px",
-          flexWrap:   "wrap",
+          flexDirection: "column",
+          alignItems: "center",
+          textAlign: "center",
+          gap:        "16px",
+          width:      "100%",
+          maxWidth:   "700px",
+          margin:     "0 auto",
         }}
       >
         <div>
@@ -249,7 +252,7 @@ export default function ProcessSection() {
           style={{
             fontSize:  "0.92rem",
             color:     "rgba(242,245,234,0.42)",
-            maxWidth:  "340px",
+            maxWidth:  "480px",
             lineHeight: 1.65,
             margin:    0,
           }}
