@@ -47,6 +47,19 @@ export default function KineticMaskHero({
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  // Keep the canvas pixel resolution in sync with the viewport
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+
   const onExpansionChangeRef = useRef(onExpansionChange);
   const onProgressChangeRef = useRef(onProgressChange);
   const targetProgress = useRef(0);
@@ -59,13 +72,29 @@ export default function KineticMaskHero({
     vid.defaultMuted = true;
     vid.muted = true;
     
-    if (isActive && mediaFullyExpanded) {
-      vid.play().catch((err) => {
-        console.warn("Video playback was prevented:", err);
-      });
+    if (isActive) {
+      if (mediaFullyExpanded) {
+        vid.play().catch((err) => {
+          console.warn("Video playback was prevented:", err);
+        });
+      } else {
+        // Prime the video on iOS Safari/Chrome to force frame decoding while keeping it paused
+        if (vid.paused && vid.currentTime === 0) {
+          vid.play()
+            .then(() => {
+              // Pause immediately after play resolves to capture first frame
+              vid.pause();
+            })
+            .catch((err) => {
+              console.warn("Priming video play failed:", err);
+            });
+        } else {
+          vid.pause();
+          vid.currentTime = 0;
+        }
+      }
     } else {
       vid.pause();
-      vid.currentTime = 0;
     }
   }, [isActive, mediaFullyExpanded]);
 
@@ -318,24 +347,29 @@ export default function KineticMaskHero({
   const bgOpacity = useTransform(progressVal, (v) => 1 - Math.min(v, 1.0));
   const contentOpacity = useTransform(progressVal, (v) => Math.max(0, 1 - Math.min(v, 1.0) * 3));
 
-  // Dynamic mask background: color interpolates from black (hides video) to white (reveals video)
-  // in the last 20% of the scroll zoom, completing the transition smoothly.
-  const maskBgColor = useTransform(
+  // Inverted mask: white = cover opaque (video hidden), black = cover transparent (video visible).
+  // White text punches holes in the cover, revealing the canvas below.
+  // As progress → 1 the entire cover fades to transparent, video fills the screen.
+  const coverMaskBg = useTransform(
     progressVal,
     [0, 0.8, 1.0, 1.0 + SCROLL_HOLD_BUFFER],
-    ["rgb(0,0,0)", "rgb(0,0,0)", "rgb(255,255,255)", "rgb(255,255,255)"]
+    ["rgb(255,255,255)", "rgb(255,255,255)", "rgb(0,0,0)", "rgb(0,0,0)"]
   );
+
+  const transformOrigin = isMobile ? "450px 430px" : "430px 470px";
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden bg-[#0A1628]">
-      
-      {/* Hidden Video Source - Keep crossOrigin and playsInline for iOS */}
+      {/* Dark backdrop */}
+      <div className="absolute inset-0 z-0 bg-[#0A1628]" />
+
+      {/* Video source — kept nearly-invisible in the HTML tree so iOS decodes
+          frames for canvas.drawImage() without the foreignObject GPU-layer bug. */}
       <video
         ref={videoRef}
         src={mediaSrc}
         poster={posterSrc}
-        crossOrigin="anonymous"
-        preload="auto"
+        autoPlay
         muted
         loop
         playsInline
@@ -344,77 +378,64 @@ export default function KineticMaskHero({
         style={{
           position: "absolute",
           opacity: 0.01,
+          width: "1px",
+          height: "1px",
           pointerEvents: "none",
-          zIndex: -1,
         }}
       />
 
-      {/* Layer 1: Background Aerial Solar Image (visible only initially, fades out) */}
-      <motion.div
-        className="absolute inset-0 z-5"
-        style={{ opacity: bgOpacity }}
-      >
-        {/* Grayscale Background Image */}
-        <img
-          src={bgImageSrc}
-          alt="Aerial view"
-          className="w-full h-full object-cover filter grayscale contrast-125 brightness-[0.45]"
-        />
-        {/* Luxury Blue Duotone Overlay */}
-        <div className="absolute inset-0 bg-[#0A1628] mix-blend-multiply opacity-90" />
-      </motion.div>
-
-      {/* Layer 2: HTML Canvas - Rendered outside SVG and masked with CSS mask-image */}
+      {/* Canvas: full-screen HTML element, NO masking applied.
+          The SVG cover above it (with the inverted hole-punch mask) reveals it
+          only at the text positions, then fully as progress reaches 1.
+          Keeping the canvas in HTML (not foreignObject) is the iOS fix — iOS
+          never extracts plain HTML canvas onto a separate GPU layer. */}
       <canvas
         ref={canvasRef}
-        style={{
-          position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: 10,
-          maskImage: "url(#kinetic-text-mask)",
-          WebkitMaskImage: "url(#kinetic-text-mask)",
-        }}
+        className="absolute inset-0 z-[10]"
+        style={{ display: "block", width: "100%", height: "100%" }}
       />
 
-      {/* Layer 3: Kinetic SVG Overlay containing shadow, outline, and mask defs */}
+      {/* Kinetic SVG overlay */}
       <svg
         className="absolute inset-0 z-20 w-full h-full pointer-events-none select-none"
         viewBox="0 0 1000 1000"
         preserveAspectRatio="xMidYMid slice"
       >
         <defs>
-          {/* Rich Golden Gradient for outline highlight */}
+          {/* Gold gradient for outline stroke */}
           <linearGradient id="gold-stroke-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#FFE57F" />
             <stop offset="30%" stopColor="#FFD700" />
             <stop offset="100%" stopColor="#FF9100" />
           </linearGradient>
 
-          <mask id="kinetic-text-mask">
-            {/* Background of the mask: interpolates from black to white to reveal video */}
-            <motion.rect
-              width="1000"
-              height="1000"
-              fill={maskBgColor}
+          {/* SVG filter: grayscale + contrast(1.25) + brightness(0.45) for the aerial image.
+              Equivalent to the CSS classes grayscale/contrast-125/brightness-[0.45]. */}
+          <filter id="aerial-filter" colorInterpolationFilters="sRGB">
+            <feColorMatrix
+              type="matrix"
+              values="0.11981 0.40219 0.04050 0 -0.05625
+                      0.11981 0.40219 0.04050 0 -0.05625
+                      0.11981 0.40219 0.04050 0 -0.05625
+                      0       0       0       1  0"
             />
-            {/* White text reveals the video inside it */}
-            <motion.g
-              style={{
-                transformOrigin: isMobile ? "450px 430px" : "430px 470px",
-                scale: scale,
-                willChange: "transform",
-              }}
-            >
-              {/* Main Brand Name */}
+          </filter>
+
+          {/* ── Inverted hole-punch mask ──────────────────────────────────────
+              white = cover remains opaque  (canvas video is hidden)
+              black = cover becomes transparent  (canvas video shows through)
+              Text shapes are black → they punch holes through which the canvas
+              HTML element below is visible. As progress → 1 the whole cover
+              fades to transparent, revealing the video everywhere. */}
+          <mask id="cover-mask">
+            <motion.rect width="1000" height="1000" fill={coverMaskBg} />
+            <motion.g style={{ transformOrigin, scale }}>
               <text
                 x="500"
                 y={isMobile ? "430" : "470"}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fill="white"
+                fill="black"
                 className="font-sans font-black tracking-tighter"
                 style={{
                   fontSize: isMobile ? "90px" : "125px",
@@ -423,17 +444,14 @@ export default function KineticMaskHero({
               >
                 SUNNEST
               </text>
-              {/* Sub-label */}
               <text
                 x="507"
                 y={isMobile ? "505" : "545"}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                fill="white"
+                fill="black"
                 className="font-sans font-bold tracking-[0.35em]"
-                style={{
-                  fontSize: isMobile ? "45px" : "65px",
-                }}
+                style={{ fontSize: isMobile ? "45px" : "65px" }}
               >
                 POWER
               </text>
@@ -441,15 +459,28 @@ export default function KineticMaskHero({
           </mask>
         </defs>
 
-        {/* ──────── 3D Architectural Shadow ──────── */}
-        <motion.g
-          style={{
-            transformOrigin: isMobile ? "450px 430px" : "430px 470px",
-            scale: scale,
-            opacity: bgOpacity,
-            willChange: "transform, opacity",
-          }}
-        >
+        {/* ── Cover layer: dark navy + aerial image, hole-punched at text positions.
+            This is native SVG — masks on SVG elements work correctly on iOS. ── */}
+        <g mask="url(#cover-mask)">
+          {/* Base dark navy background */}
+          <rect width="1000" height="1000" fill="#0A1628" />
+          {/* Aerial image (grayscale+dark via SVG filter), fades as zoom progresses */}
+          <motion.image
+            href={bgImageSrc}
+            x="0"
+            y="0"
+            width="1000"
+            height="1000"
+            preserveAspectRatio="xMidYMid slice"
+            filter="url(#aerial-filter)"
+            style={{ opacity: bgOpacity }}
+          />
+          {/* Luxury blue duotone overlay */}
+          <rect width="1000" height="1000" fill="#0A1628" opacity="0.90" />
+        </g>
+
+        {/* ── 3D Architectural Shadow (above cover, fades on zoom) ── */}
+        <motion.g style={{ transformOrigin, scale, opacity: bgOpacity }}>
           <text
             x="505"
             y={isMobile ? "435" : "475"}
@@ -471,23 +502,14 @@ export default function KineticMaskHero({
             dominantBaseline="middle"
             fill="#050C16"
             className="font-sans font-bold tracking-[0.35em] opacity-80"
-            style={{
-              fontSize: isMobile ? "45px" : "65px",
-            }}
+            style={{ fontSize: isMobile ? "45px" : "65px" }}
           >
             POWER
           </text>
         </motion.g>
 
-        {/* ──────── Liquid Gold Outline ──────── */}
-        <motion.g
-          style={{
-            transformOrigin: isMobile ? "450px 430px" : "430px 470px",
-            scale: scale,
-            opacity: bgOpacity,
-            willChange: "transform, opacity",
-          }}
-        >
+        {/* ── Liquid Gold Outline (above cover, fades on zoom) ── */}
+        <motion.g style={{ transformOrigin, scale, opacity: bgOpacity }}>
           <text
             x="500"
             y={isMobile ? "430" : "470"}
@@ -513,16 +535,14 @@ export default function KineticMaskHero({
             stroke="url(#gold-stroke-gradient)"
             strokeWidth="1.5"
             className="font-sans font-bold tracking-[0.35em]"
-            style={{
-              fontSize: isMobile ? "45px" : "65px",
-            }}
+            style={{ fontSize: isMobile ? "45px" : "65px" }}
           >
             POWER
           </text>
         </motion.g>
       </svg>
 
-      {/* Elegant Technical Spec Overlays (fades out as we zoom) */}
+      {/* Scroll hint (fades out as we zoom) */}
       <motion.div
         className="absolute inset-x-0 top-[58%] lg:top-auto lg:bottom-12 z-40 flex flex-col items-center justify-center gap-3 pointer-events-none text-center px-6"
         style={{ opacity: contentOpacity }}
@@ -530,7 +550,6 @@ export default function KineticMaskHero({
         <p className="max-w-md text-xs md:text-sm font-medium text-white/65 leading-relaxed">
           High-yield solar power systems engineered for residential autonomy and commercial savings. We design, permit, and commission lifetime clean energy infrastructure across India.
         </p>
-
         <span className="text-xs font-serif italic text-yellow-400 tracking-widest opacity-80">
           Scroll to enter the grid
         </span>
