@@ -330,26 +330,23 @@ export default function KineticMaskHero({
   const bgOpacity = useTransform(progressVal, (v) => 1 - Math.min(v, 1.0));
   const contentOpacity = useTransform(progressVal, (v) => Math.max(0, 1 - Math.min(v, 1.0) * 3));
 
-  // Dynamic mask background: color interpolates from black (hides video) to white (reveals video)
-  // in the last 20% of the scroll zoom, completing the transition smoothly.
-  const maskBgColor = useTransform(
+  // INVERTED MASK LOGIC: 
+  // White means "keep the cover solid". Black means "make the cover transparent".
+  const inverseMaskBgColor = useTransform(
     progressVal,
     [0, 0.8, 1.0, 1.0 + SCROLL_HOLD_BUFFER],
-    ["rgb(0,0,0)", "rgb(0,0,0)", "rgb(255,255,255)", "rgb(255,255,255)"]
+    ["rgb(255,255,255)", "rgb(255,255,255)", "rgb(0,0,0)", "rgb(0,0,0)"]
   );
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden bg-[#0A1628]">
-      {/* Solid Backdrop Helper */}
-      <div className="absolute inset-0 z-0 bg-[#0A1628]" />
-
-      {/* Video source — kept off-screen so canvas can copy its frames.
-          We never render <video> inside SVG <foreignObject> because iOS Safari
-          extracts it to a separate GPU layer, bypassing the SVG mask entirely. */}
+      
+      {/* Hidden Video Source - Keep crossOrigin and playsInline for iOS */}
       <video
         ref={videoRef}
         src={mediaSrc}
         poster={posterSrc}
+        crossOrigin="anonymous"
         autoPlay
         muted
         loop
@@ -358,52 +355,31 @@ export default function KineticMaskHero({
         disableRemotePlayback
         style={{
           position: "absolute",
-          inset: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
           opacity: 0.01,
           pointerEvents: "none",
-          zIndex: 15,
+          zIndex: -1,
         }}
       />
 
-      {/* Background Aerial Solar Image (visible only initially, fades out) */}
-      <motion.div
-        className="absolute inset-0 z-10"
-        style={{ opacity: bgOpacity }}
-      >
-        {/* Grayscale Background Image */}
-        <img
-          src={bgImageSrc}
-          alt="Aerial view"
-          className="w-full h-full object-cover filter grayscale contrast-125 brightness-[0.45]"
-        />
-        {/* Luxury Blue Duotone Overlay */}
-        <div className="absolute inset-0 bg-[#0A1628] mix-blend-multiply opacity-90" />
-      </motion.div>
-
-      {/* Kinetic SVG Mask Overlay */}
+      {/* Main Kinetic Canvas & SVG Layer */}
       <svg
         className="absolute inset-0 z-20 w-full h-full pointer-events-none select-none"
         viewBox="0 0 1000 1000"
         preserveAspectRatio="xMidYMid slice"
       >
         <defs>
-          {/* Rich Golden Gradient for outline highlight */}
           <linearGradient id="gold-stroke-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#FFE57F" />
             <stop offset="30%" stopColor="#FFD700" />
             <stop offset="100%" stopColor="#FF9100" />
           </linearGradient>
-          <mask id="kinetic-text-mask">
-            {/* Background of the mask: interpolates from black to white to reveal video */}
-            <motion.rect
-              width="1000"
-              height="1000"
-              fill={maskBgColor}
-            />
-            {/* White text reveals the video inside it */}
+
+          {/* THE INVERTED MASK */}
+          <mask id="hole-punch-mask">
+            {/* Base of mask is White (Cover layer remains visible) */}
+            <motion.rect width="1000" height="1000" fill={inverseMaskBgColor} />
+
+            {/* Text is Black (Punches a transparent hole in the cover) */}
             <motion.g
               style={{
                 transformOrigin: isMobile ? "450px 430px" : "430px 470px",
@@ -411,32 +387,21 @@ export default function KineticMaskHero({
                 willChange: "transform",
               }}
             >
-              {/* Main Brand Name */}
               <text
-                x="500"
-                y={isMobile ? "430" : "470"}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="white"
+                x="500" y={isMobile ? "430" : "470"}
+                textAnchor="middle" dominantBaseline="middle"
+                fill="black"
                 className="font-sans font-black tracking-tighter"
-                style={{
-                  fontSize: isMobile ? "90px" : "125px",
-                  letterSpacing: isMobile ? "-1px" : "-2px",
-                }}
+                style={{ fontSize: isMobile ? "90px" : "125px", letterSpacing: isMobile ? "-1px" : "-2px" }}
               >
                 SUNNEST
               </text>
-              {/* Sub-label */}
               <text
-                x="507"
-                y={isMobile ? "505" : "545"}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="white"
+                x="507" y={isMobile ? "505" : "545"}
+                textAnchor="middle" dominantBaseline="middle"
+                fill="black"
                 className="font-sans font-bold tracking-[0.35em]"
-                style={{
-                  fontSize: isMobile ? "45px" : "65px",
-                }}
+                style={{ fontSize: isMobile ? "45px" : "65px" }}
               >
                 POWER
               </text>
@@ -444,58 +409,9 @@ export default function KineticMaskHero({
           </mask>
         </defs>
 
-        {/* ──────── 3D Architectural Shadow (Behind video) ──────── */}
-        <motion.g
-          style={{
-            transformOrigin: isMobile ? "450px 430px" : "430px 470px",
-            scale: scale,
-            opacity: bgOpacity,
-            willChange: "transform, opacity",
-          }}
-        >
-          <text
-            x="505"
-            y={isMobile ? "435" : "475"}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="#050C16"
-            className="font-sans font-black tracking-tighter opacity-80"
-            style={{
-              fontSize: isMobile ? "90px" : "125px",
-              letterSpacing: isMobile ? "-1px" : "-2px",
-            }}
-          >
-            SUNNEST
-          </text>
-          <text
-            x="512"
-            y={isMobile ? "510" : "550"}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="#050C16"
-            className="font-sans font-bold tracking-[0.35em] opacity-80"
-            style={{
-              fontSize: isMobile ? "45px" : "65px",
-            }}
-          >
-            POWER
-          </text>
-        </motion.g>
-
-        {/* Canvas inside foreignObject receives video frames via drawImage().
-            Unlike a raw <video>, a canvas stays in SVG's compositing context
-            on iOS Safari, so the kinetic text mask works identically everywhere. */}
-        <foreignObject
-          x="0"
-          y="0"
-          width="1000"
-          height="1000"
-          mask="url(#kinetic-text-mask)"
-          style={{
-            transform: "translate3d(0, 0, 0)",
-            willChange: "transform",
-          }}
-        >
+        {/* LAYER 1: UNMASKED VIDEO CANVAS (Bottom) */}
+        {/* Because this has no mask, iOS will not panic and break it */}
+        <foreignObject x="0" y="0" width="1000" height="1000">
           <canvas
             ref={canvasRef}
             width={1000}
@@ -504,13 +420,38 @@ export default function KineticMaskHero({
               display: "block",
               width: "1000px",
               height: "1000px",
-              transform: "translate3d(0, 0, 0)",
-              willChange: "transform",
             }}
           />
         </foreignObject>
 
-        {/* ──────── Liquid Gold Outline (On top of video) ──────── */}
+        {/* LAYER 2: THE COVER (Top) - Gets a hole punched in it by the mask */}
+        <g mask="url(#hole-punch-mask)">
+          {/* Base Backdrop Color */}
+          <rect width="1000" height="1000" fill="#0A1628" />
+
+          {/* Aerial Image (moved into SVG so it gets masked properly) */}
+          <motion.image
+            href={bgImageSrc}
+            width="1000"
+            height="1000"
+            preserveAspectRatio="xMidYMid slice"
+            style={{ 
+              opacity: bgOpacity,
+              filter: "grayscale(100%) contrast(125%) brightness(45%)" 
+            }}
+          />
+
+          {/* Luxury Blue Duotone Overlay */}
+          <rect 
+            width="1000" 
+            height="1000" 
+            fill="#0A1628" 
+            opacity="0.9" 
+            style={{ mixBlendMode: "multiply" }} 
+          />
+        </g>
+
+        {/* LAYER 3: 3D Architectural Shadow */}
         <motion.g
           style={{
             transformOrigin: isMobile ? "450px 430px" : "430px 470px",
@@ -520,33 +461,49 @@ export default function KineticMaskHero({
           }}
         >
           <text
-            x="500"
-            y={isMobile ? "430" : "470"}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="none"
-            stroke="url(#gold-stroke-gradient)"
-            strokeWidth="2"
-            className="font-sans font-black tracking-tighter"
-            style={{
-              fontSize: isMobile ? "90px" : "125px",
-              letterSpacing: isMobile ? "-1px" : "-2px",
-            }}
+            x="505" y={isMobile ? "435" : "475"}
+            textAnchor="middle" dominantBaseline="middle"
+            fill="#050C16"
+            className="font-sans font-black tracking-tighter opacity-80"
+            style={{ fontSize: isMobile ? "90px" : "125px", letterSpacing: isMobile ? "-1px" : "-2px" }}
           >
             SUNNEST
           </text>
           <text
-            x="507"
-            y={isMobile ? "505" : "545"}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="none"
-            stroke="url(#gold-stroke-gradient)"
-            strokeWidth="1.5"
+            x="512" y={isMobile ? "510" : "550"}
+            textAnchor="middle" dominantBaseline="middle"
+            fill="#050C16"
+            className="font-sans font-bold tracking-[0.35em] opacity-80"
+            style={{ fontSize: isMobile ? "45px" : "65px" }}
+          >
+            POWER
+          </text>
+        </motion.g>
+
+        {/* LAYER 4: Liquid Gold Outline */}
+        <motion.g
+          style={{
+            transformOrigin: isMobile ? "450px 430px" : "430px 470px",
+            scale: scale,
+            opacity: bgOpacity,
+            willChange: "transform, opacity",
+          }}
+        >
+          <text
+            x="500" y={isMobile ? "430" : "470"}
+            textAnchor="middle" dominantBaseline="middle"
+            fill="none" stroke="url(#gold-stroke-gradient)" strokeWidth="2"
+            className="font-sans font-black tracking-tighter"
+            style={{ fontSize: isMobile ? "90px" : "125px", letterSpacing: isMobile ? "-1px" : "-2px" }}
+          >
+            SUNNEST
+          </text>
+          <text
+            x="507" y={isMobile ? "505" : "545"}
+            textAnchor="middle" dominantBaseline="middle"
+            fill="none" stroke="url(#gold-stroke-gradient)" strokeWidth="1.5"
             className="font-sans font-bold tracking-[0.35em]"
-            style={{
-              fontSize: isMobile ? "45px" : "65px",
-            }}
+            style={{ fontSize: isMobile ? "45px" : "65px" }}
           >
             POWER
           </text>
