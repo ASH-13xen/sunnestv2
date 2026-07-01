@@ -56,12 +56,17 @@ export default function KineticMaskHero({
   useEffect(() => {
     const vid = videoRef.current;
     if (!vid) return;
+    vid.defaultMuted = true;
+    vid.muted = true;
+    
     if (isActive) {
       vid.play().catch((err) => {
         console.warn("Autoplay was prevented, waiting for user gesture:", err);
       });
 
       const handleGesture = () => {
+        vid.defaultMuted = true;
+        vid.muted = true;
         if (vid.paused) {
           vid.play().catch((err) => console.warn("Gesture play failed:", err));
         }
@@ -357,9 +362,9 @@ export default function KineticMaskHero({
           width: "100%",
           height: "100%",
           objectFit: "cover",
-          opacity: 0.001,
+          opacity: 0.01,
           pointerEvents: "none",
-          zIndex: -10,
+          zIndex: 15,
         }}
       />
 
@@ -403,6 +408,7 @@ export default function KineticMaskHero({
               style={{
                 transformOrigin: isMobile ? "450px 430px" : "430px 470px",
                 scale: scale,
+                willChange: "transform",
               }}
             >
               {/* Main Brand Name */}
@@ -444,6 +450,7 @@ export default function KineticMaskHero({
             transformOrigin: isMobile ? "450px 430px" : "430px 470px",
             scale: scale,
             opacity: bgOpacity,
+            willChange: "transform, opacity",
           }}
         >
           <text
@@ -479,15 +486,27 @@ export default function KineticMaskHero({
             Unlike a raw <video>, a canvas stays in SVG's compositing context
             on iOS Safari, so the kinetic text mask works identically everywhere. */}
         <foreignObject
+          x="0"
+          y="0"
           width="1000"
           height="1000"
           mask="url(#kinetic-text-mask)"
+          style={{
+            transform: "translate3d(0, 0, 0)",
+            willChange: "transform",
+          }}
         >
           <canvas
             ref={canvasRef}
             width={1000}
             height={1000}
-            style={{ display: "block", width: "1000px", height: "1000px" }}
+            style={{
+              display: "block",
+              width: "1000px",
+              height: "1000px",
+              transform: "translate3d(0, 0, 0)",
+              willChange: "transform",
+            }}
           />
         </foreignObject>
 
@@ -497,6 +516,7 @@ export default function KineticMaskHero({
             transformOrigin: isMobile ? "450px 430px" : "430px 470px",
             scale: scale,
             opacity: bgOpacity,
+            willChange: "transform, opacity",
           }}
         >
           <text
