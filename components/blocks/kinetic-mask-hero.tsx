@@ -59,32 +59,15 @@ export default function KineticMaskHero({
     vid.defaultMuted = true;
     vid.muted = true;
     
-    if (isActive) {
+    if (isActive && mediaFullyExpanded) {
       vid.play().catch((err) => {
-        console.warn("Autoplay was prevented, waiting for user gesture:", err);
+        console.warn("Video playback was prevented:", err);
       });
-
-      const handleGesture = () => {
-        vid.defaultMuted = true;
-        vid.muted = true;
-        if (vid.paused) {
-          vid.play().catch((err) => console.warn("Gesture play failed:", err));
-        }
-        window.removeEventListener("touchstart", handleGesture);
-        window.removeEventListener("click", handleGesture);
-      };
-
-      window.addEventListener("touchstart", handleGesture);
-      window.addEventListener("click", handleGesture);
-
-      return () => {
-        window.removeEventListener("touchstart", handleGesture);
-        window.removeEventListener("click", handleGesture);
-      };
     } else {
       vid.pause();
+      vid.currentTime = 0;
     }
-  }, [isActive]);
+  }, [isActive, mediaFullyExpanded]);
 
   // Copy video frames into the canvas on every animation frame.
   // Using a canvas inside foreignObject instead of a raw <video> element
@@ -100,11 +83,16 @@ export default function KineticMaskHero({
     let rafId: number;
     const draw = () => {
       if (video.readyState >= 2 && video.videoWidth > 0) {
-        // Simulate object-cover: scale to fill 1000×1000 centered
-        const scale = Math.max(1000 / video.videoWidth, 1000 / video.videoHeight);
+        const cw = canvas.clientWidth || 1000;
+        const ch = canvas.clientHeight || 1000;
+        if (canvas.width !== cw || canvas.height !== ch) {
+          canvas.width = cw;
+          canvas.height = ch;
+        }
+        const scale = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
         const dw = video.videoWidth * scale;
         const dh = video.videoHeight * scale;
-        ctx.drawImage(video, (1000 - dw) / 2, (1000 - dh) / 2, dw, dh);
+        ctx.drawImage(video, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
       }
       rafId = requestAnimationFrame(draw);
     };
@@ -349,7 +337,7 @@ export default function KineticMaskHero({
         src={mediaSrc}
         poster={posterSrc}
         crossOrigin="anonymous"
-        autoPlay
+        preload="auto"
         muted
         loop
         playsInline
@@ -363,7 +351,20 @@ export default function KineticMaskHero({
         }}
       />
 
-      {/* Main Kinetic Canvas & SVG Layer */}
+      {/* LAYER 1: UNMASKED VIDEO CANVAS (Bottom HTML Stack) */}
+      <canvas
+        ref={canvasRef}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: 10,
+        }}
+      />
+
+      {/* Main Kinetic SVG Layer (Top HTML Stack) */}
       <svg
         className="absolute inset-0 z-20 w-full h-full pointer-events-none select-none"
         viewBox="0 0 1000 1000"
@@ -410,21 +411,6 @@ export default function KineticMaskHero({
             </motion.g>
           </mask>
         </defs>
-
-        {/* LAYER 1: UNMASKED VIDEO CANVAS (Bottom) */}
-        {/* Because this has no mask, iOS will not panic and break it */}
-        <foreignObject x="0" y="0" width="1000" height="1000">
-          <canvas
-            ref={canvasRef}
-            width={1000}
-            height={1000}
-            style={{
-              display: "block",
-              width: "1000px",
-              height: "1000px",
-            }}
-          />
-        </foreignObject>
 
         {/* LAYER 2: THE COVER (Top) - Gets a hole punched in it by the mask */}
         <g mask="url(#hole-punch-mask)">
