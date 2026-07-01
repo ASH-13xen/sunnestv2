@@ -39,6 +39,11 @@ export default function KineticMaskHero({
   const [mediaFullyExpanded, setMediaFullyExpanded] = useState(false);
   const [touchStartY, setTouchStartY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  // iOS Safari cannot render <video> inside SVG <foreignObject> — it escapes the
+  // mask context and appears full-screen. We detect iOS and skip the kinetic mask,
+  // showing a plain full-screen video instead.
+  const [isIOS, setIsIOS] = useState(false);
+  const iosVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -47,6 +52,20 @@ export default function KineticMaskHero({
     return () => window.removeEventListener("resize", check);
   }, []);
 
+  useEffect(() => {
+    const ua = window.navigator.userAgent;
+    const iOS =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (ua.includes("Mac") && navigator.maxTouchPoints > 1);
+    if (iOS) {
+      setIsIOS(true);
+      // Jump straight to fully-expanded state so iOS users get a clean
+      // full-screen video hero without the broken SVG-mask animation.
+      progressVal.set(1.0 + SCROLL_HOLD_BUFFER);
+      setMediaFullyExpanded(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const onExpansionChangeRef = useRef(onExpansionChange);
   const onProgressChangeRef = useRef(onProgressChange);
   const targetProgress = useRef(0);
@@ -54,15 +73,14 @@ export default function KineticMaskHero({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    if (!videoRef.current) return;
+    const vid = isIOS ? iosVideoRef.current : videoRef.current;
+    if (!vid) return;
     if (isActive) {
-      videoRef.current.play().catch((err) => {
-        console.warn("Video playback was prevented:", err);
-      });
+      vid.play().catch((err) => console.warn("Video playback was prevented:", err));
     } else {
-      videoRef.current.pause();
+      vid.pause();
     }
-  }, [isActive]);
+  }, [isActive, isIOS]);
   const autoZoomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -295,6 +313,24 @@ export default function KineticMaskHero({
       {/* Solid Backdrop Helper */}
       <div className="absolute inset-0 z-0 bg-[#0A1628]" />
 
+      {/* iOS fallback video — rendered as a regular element outside SVG so
+          Safari's compositing engine doesn't pull it out of the mask context */}
+      {isIOS && (
+        <video
+          ref={iosVideoRef}
+          src={mediaSrc}
+          poster={posterSrc}
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 z-10 w-full h-full object-cover"
+          disablePictureInPicture
+          // @ts-expect-error – non-standard but supported in Safari
+          disableRemotePlayback
+        />
+      )}
+
       {/* Background Aerial Solar Image (visible only initially, fades out) */}
       <motion.div
         className="absolute inset-0 z-10"
@@ -407,30 +443,29 @@ export default function KineticMaskHero({
           </text>
         </motion.g>
 
-        {/* Video nested inside masked foreignObject */}
-        <foreignObject
-          width="1000"
-          height="1000"
-          mask="url(#kinetic-text-mask)"
-          className="w-full h-full"
-        >
-          <video
-            ref={videoRef}
-            src={mediaSrc}
-            poster={posterSrc}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="w-full h-full object-cover"
-            style={{
-              width: "1000px",
-              height: "1000px",
-            }}
-            disablePictureInPicture
-            disableRemotePlayback
-          />
-        </foreignObject>
+        {/* Video inside SVG mask — skipped on iOS (foreignObject + video breaks Safari) */}
+        {!isIOS && (
+          <foreignObject
+            width="1000"
+            height="1000"
+            mask="url(#kinetic-text-mask)"
+            className="w-full h-full"
+          >
+            <video
+              ref={videoRef}
+              src={mediaSrc}
+              poster={posterSrc}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="w-full h-full object-cover"
+              style={{ width: "1000px", height: "1000px" }}
+              disablePictureInPicture
+              disableRemotePlayback
+            />
+          </foreignObject>
+        )}
 
         {/* ──────── Liquid Gold Outline (On top of video) ──────── */}
         <motion.g
