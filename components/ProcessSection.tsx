@@ -217,7 +217,7 @@ export default function ProcessSection() {
           textAlign: "center",
           gap:        "16px",
           width:      "100%",
-          maxWidth:   "700px",
+          maxWidth:   "1000px",
           margin:     "0 auto",
         }}
       >
@@ -238,9 +238,10 @@ export default function ProcessSection() {
           </span>
           <h2
             style={{
-              fontSize:   "clamp(2.4rem, 5vw, 4.2rem)",
+              fontSize:   "clamp(3.5rem, 7vw, 6rem)",
               fontWeight: 900,
-              lineHeight: 0.9,
+              textTransform: "uppercase",
+              lineHeight: 0.85,
               color:      "#ffffff",
               margin:     0,
             }}

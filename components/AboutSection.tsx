@@ -63,7 +63,7 @@ export default function AboutSection() {
             boxSizing: "border-box",
           }}
         >
-          <div style={{ maxWidth: "700px", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ maxWidth: "1000px", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
             <span
               style={{
                 display: "block",
@@ -81,13 +81,12 @@ export default function AboutSection() {
 
             <h2
               style={{
-                fontSize: "clamp(2.4rem, 5vw, 3.2rem)",
+                fontSize: "clamp(3.5rem, 7vw, 6rem)",
                 fontWeight: 900,
                 textTransform: "uppercase",
-                lineHeight: 0.95,
+                lineHeight: 0.85,
                 color: pageText,
                 margin: "0 0 20px",
-                fontFamily: "var(--font-serif)",
                 transition: "color 0.4s ease",
               }}
             >

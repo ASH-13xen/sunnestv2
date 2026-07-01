@@ -96,7 +96,7 @@ export default function PricingSection() {
       }}
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div style={{ textAlign: "center", maxWidth: "640px", margin: "0px auto 80px" }}>
+      <div style={{ textAlign: "center", maxWidth: "1000px", margin: "0px auto 80px" }}>
         <span
           style={{
             display: "block",
@@ -113,12 +113,12 @@ export default function PricingSection() {
         </span>
         <h2
           style={{
-            fontSize: "clamp(2.4rem, 4vw, 3.2rem)",
+            fontSize: "clamp(3.5rem, 7vw, 6rem)",
             fontWeight: 900,
-            lineHeight: 1,
+            textTransform: "uppercase",
+            lineHeight: 0.85,
             color: pageText,
             margin: "0 0 14px",
-            fontFamily: "var(--font-serif)",
             transition: "color 0.4s ease",
           }}
         >

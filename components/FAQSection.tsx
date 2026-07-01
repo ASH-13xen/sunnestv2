@@ -59,6 +59,53 @@ export default function FAQSection() {
         borderTop: `1px solid ${rowBorder}`,
       }}
     >
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
+      <div style={{ textAlign: "center", maxWidth: "1000px", margin: "0px auto 60px" }}>
+        <span
+          style={{
+            display: "block",
+            fontSize: "0.68rem",
+            fontWeight: 800,
+            letterSpacing: "0.28em",
+            textTransform: "uppercase",
+            color: goldColor,
+            marginBottom: "14px",
+            transition: "color 0.4s ease",
+          }}
+        >
+          05 // SUPPORT HUBS
+        </span>
+
+        <h2
+          style={{
+            fontSize: "clamp(3.5rem, 7vw, 6rem)",
+            fontWeight: 900,
+            textTransform: "uppercase",
+            lineHeight: 0.85,
+            color: pageText,
+            margin: "0 0 20px",
+            transition: "color 0.4s ease",
+          }}
+        >
+          Got
+          <br />
+          <span style={{ color: goldColor, transition: "color 0.4s ease" }}>Questions?</span>
+        </h2>
+
+        <p
+          style={{
+            fontSize: "0.92rem",
+            lineHeight: 1.7,
+            color: pageText45,
+            maxWidth: "600px",
+            margin: "0 auto",
+            transition: "color 0.4s ease",
+          }}
+        >
+          Everything you need to know about our high-efficiency solar modules, PM Surya Ghar net metering paperwork, and post-commissioning warranties.
+        </p>
+      </div>
+
       <div
         style={{
           maxWidth: "1100px",
@@ -70,97 +117,7 @@ export default function FAQSection() {
         }}
         className="lg:grid-cols-12"
       >
-        {/* ── Left Column: Asymmetrical Header & Quick Contact ── */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center" }} className="lg:col-span-5">
-          <span
-            style={{
-              display: "block",
-              fontSize: "0.68rem",
-              fontWeight: 800,
-              letterSpacing: "0.28em",
-              textTransform: "uppercase",
-              color: goldColor,
-              marginBottom: "14px",
-              transition: "color 0.4s ease",
-            }}
-          >
-            05 // SUPPORT HUBS
-          </span>
 
-          <h2
-            style={{
-              fontSize: "clamp(2.4rem, 5vw, 3.2rem)",
-              fontWeight: 900,
-              textTransform: "uppercase",
-              lineHeight: 0.95,
-              color: pageText,
-              margin: "0 0 20px",
-              fontFamily: "var(--font-serif)",
-              transition: "color 0.4s ease",
-            }}
-          >
-            Got
-            <br />
-            <span style={{ color: goldColor, transition: "color 0.4s ease" }}>Questions?</span>
-          </h2>
-
-          <p
-            style={{
-              fontSize: "0.92rem",
-              lineHeight: 1.7,
-              color: pageText45,
-              margin: "0 0 32px",
-              transition: "color 0.4s ease",
-            }}
-          >
-            Everything you need to know about our high-efficiency solar modules, PM Surya Ghar net metering paperwork, and post-commissioning warranties.
-          </p>
-
-          {/* Quick Contact Card */}
-          <div
-            style={{
-              background: isNight ? "rgba(255,255,255,0.03)" : "rgba(10,22,40,0.03)",
-              border: `1px solid ${rowBorder}`,
-              borderRadius: "20px",
-              padding: "24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "14px",
-              width: "100%",
-              maxWidth: "380px",
-            }}
-          >
-            <div style={{ display: "flex", gap: "12px", alignItems: "center", justifyContent: "center" }}>
-              <div
-                style={{
-                  width: "36px",
-                  height: "36px",
-                  borderRadius: "10px",
-                  background: `${goldColor}12`,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Phone size={16} color={goldColor} />
-              </div>
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: "0.6rem", fontWeight: 800, textTransform: "uppercase", color: pageText45, letterSpacing: "0.05em" }}>
-                  Ring Support directly
-                </div>
-                <a
-                  href="tel:18007866378"
-                  style={{ fontSize: "1.05rem", fontWeight: 800, color: pageText, textDecoration: "none" }}
-                >
-                  1-800-786-6378
-                </a>
-              </div>
-            </div>
-            <div style={{ fontSize: "0.78rem", color: pageText45, lineHeight: 1.5, textAlign: "center" }}>
-              Our expert solar engineers are available Monday to Saturday, 9 AM – 6 PM to guide you.
-            </div>
-          </div>
-        </div>
 
         {/* ── Right Column: Accordion with Staggered Entrance Animations ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }} className="lg:col-span-7">

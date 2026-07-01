@@ -232,7 +232,7 @@ export default function TeamScrollAnimation() {
         </p>
         <h1
           className="font-black uppercase leading-[0.85]"
-          style={{ fontSize: "clamp(3.5rem, 11vw, 11rem)", color: pageText, transition: "color 0.4s ease" }}
+          style={{ fontSize: "clamp(3.5rem, 7vw, 6rem)", color: pageText, transition: "color 0.4s ease" }}
         >
           Our{" "}
           <span style={{ color: goldColor, transition: "color 0.4s ease" }}>

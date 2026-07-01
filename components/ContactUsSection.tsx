@@ -103,7 +103,7 @@ export default function ContactUsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.65 }}
-          style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}
+          style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", maxWidth: "1200px", margin: "0 auto" }}
         >
           <span style={{
             display: "block", fontSize: "0.68rem", fontWeight: 800,
@@ -113,9 +113,8 @@ export default function ContactUsSection() {
             04 // GET IN TOUCH
           </span>
           <h2 style={{
-            fontFamily: "var(--font-playfair)",
-            fontSize: "clamp(2.4rem, 5vw, 3.2rem)", fontWeight: 900,
-            textTransform: "uppercase", lineHeight: 0.95,
+            fontSize: "clamp(3.5rem, 7vw, 6rem)", fontWeight: 900,
+            textTransform: "uppercase", lineHeight: 0.85,
             color: pageText, margin: "0 0 20px", transition: "color 0.4s ease",
           }}>
             We&apos;re Here<br />

@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 // ─── Kinetic Mask Config Variables ──────────────────────────────────────────
 // You can adjust these variables directly to fine-tune the zoom animation:
@@ -39,11 +38,7 @@ export default function KineticMaskHero({
   const [mediaFullyExpanded, setMediaFullyExpanded] = useState(false);
   const [touchStartY, setTouchStartY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  // iOS Safari cannot render <video> inside SVG <foreignObject> — it escapes the
-  // mask context and appears full-screen. We detect iOS and skip the kinetic mask,
-  // showing a plain full-screen video instead.
-  const [isIOS, setIsIOS] = useState(false);
-  const iosVideoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -52,20 +47,6 @@ export default function KineticMaskHero({
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  useEffect(() => {
-    const ua = window.navigator.userAgent;
-    const iOS =
-      /iPad|iPhone|iPod/.test(ua) ||
-      (ua.includes("Mac") && navigator.maxTouchPoints > 1);
-    if (iOS) {
-      setIsIOS(true);
-      // Jump straight to fully-expanded state so iOS users get a clean
-      // full-screen video hero without the broken SVG-mask animation.
-      progressVal.set(1.0 + SCROLL_HOLD_BUFFER);
-      setMediaFullyExpanded(true);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
   const onExpansionChangeRef = useRef(onExpansionChange);
   const onProgressChangeRef = useRef(onProgressChange);
   const targetProgress = useRef(0);
@@ -73,14 +54,40 @@ export default function KineticMaskHero({
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    const vid = isIOS ? iosVideoRef.current : videoRef.current;
+    const vid = videoRef.current;
     if (!vid) return;
     if (isActive) {
       vid.play().catch((err) => console.warn("Video playback was prevented:", err));
     } else {
       vid.pause();
     }
-  }, [isActive, isIOS]);
+  }, [isActive]);
+
+  // Copy video frames into the canvas on every animation frame.
+  // Using a canvas inside foreignObject instead of a raw <video> element
+  // fixes iOS Safari: iOS extracts <video> from SVG foreignObject onto a
+  // separate GPU compositing layer (bypassing the SVG mask), but a <canvas>
+  // drawn with drawImage stays in the normal compositing stack so the mask works.
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let rafId: number;
+    const draw = () => {
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        // Simulate object-cover: scale to fill 1000×1000 centered
+        const scale = Math.max(1000 / video.videoWidth, 1000 / video.videoHeight);
+        const dw = video.videoWidth * scale;
+        const dh = video.videoHeight * scale;
+        ctx.drawImage(video, (1000 - dw) / 2, (1000 - dh) / 2, dw, dh);
+      }
+      rafId = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(rafId);
+  }, []);
   const autoZoomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -313,22 +320,21 @@ export default function KineticMaskHero({
       {/* Solid Backdrop Helper */}
       <div className="absolute inset-0 z-0 bg-[#0A1628]" />
 
-      {/* iOS fallback video — rendered as a regular element outside SVG so
-          Safari's compositing engine doesn't pull it out of the mask context */}
-      {isIOS && (
-        <video
-          ref={iosVideoRef}
-          src={mediaSrc}
-          poster={posterSrc}
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 z-10 w-full h-full object-cover"
-          disablePictureInPicture
-          disableRemotePlayback
-        />
-      )}
+      {/* Video source — kept off-screen so canvas can copy its frames.
+          We never render <video> inside SVG <foreignObject> because iOS Safari
+          extracts it to a separate GPU layer, bypassing the SVG mask entirely. */}
+      <video
+        ref={videoRef}
+        src={mediaSrc}
+        poster={posterSrc}
+        autoPlay
+        muted
+        loop
+        playsInline
+        disablePictureInPicture
+        disableRemotePlayback
+        style={{ position: "absolute", top: "-9999px", left: "-9999px", width: "1px", height: "1px", opacity: 0, pointerEvents: "none" }}
+      />
 
       {/* Background Aerial Solar Image (visible only initially, fades out) */}
       <motion.div
@@ -442,29 +448,21 @@ export default function KineticMaskHero({
           </text>
         </motion.g>
 
-        {/* Video inside SVG mask — skipped on iOS (foreignObject + video breaks Safari) */}
-        {!isIOS && (
-          <foreignObject
-            width="1000"
-            height="1000"
-            mask="url(#kinetic-text-mask)"
-            className="w-full h-full"
-          >
-            <video
-              ref={videoRef}
-              src={mediaSrc}
-              poster={posterSrc}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-              style={{ width: "1000px", height: "1000px" }}
-              disablePictureInPicture
-              disableRemotePlayback
-            />
-          </foreignObject>
-        )}
+        {/* Canvas inside foreignObject receives video frames via drawImage().
+            Unlike a raw <video>, a canvas stays in SVG's compositing context
+            on iOS Safari, so the kinetic text mask works identically everywhere. */}
+        <foreignObject
+          width="1000"
+          height="1000"
+          mask="url(#kinetic-text-mask)"
+        >
+          <canvas
+            ref={canvasRef}
+            width={1000}
+            height={1000}
+            style={{ display: "block", width: "1000px", height: "1000px" }}
+          />
+        </foreignObject>
 
         {/* ──────── Liquid Gold Outline (On top of video) ──────── */}
         <motion.g
