@@ -57,7 +57,25 @@ export default function KineticMaskHero({
     const vid = videoRef.current;
     if (!vid) return;
     if (isActive) {
-      vid.play().catch((err) => console.warn("Video playback was prevented:", err));
+      vid.play().catch((err) => {
+        console.warn("Autoplay was prevented, waiting for user gesture:", err);
+      });
+
+      const handleGesture = () => {
+        if (vid.paused) {
+          vid.play().catch((err) => console.warn("Gesture play failed:", err));
+        }
+        window.removeEventListener("touchstart", handleGesture);
+        window.removeEventListener("click", handleGesture);
+      };
+
+      window.addEventListener("touchstart", handleGesture);
+      window.addEventListener("click", handleGesture);
+
+      return () => {
+        window.removeEventListener("touchstart", handleGesture);
+        window.removeEventListener("click", handleGesture);
+      };
     } else {
       vid.pause();
     }
@@ -333,7 +351,16 @@ export default function KineticMaskHero({
         playsInline
         disablePictureInPicture
         disableRemotePlayback
-        style={{ position: "absolute", top: "-9999px", left: "-9999px", width: "1px", height: "1px", opacity: 0, pointerEvents: "none" }}
+        style={{
+          position: "absolute",
+          inset: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          opacity: 0.001,
+          pointerEvents: "none",
+          zIndex: -10,
+        }}
       />
 
       {/* Background Aerial Solar Image (visible only initially, fades out) */}
