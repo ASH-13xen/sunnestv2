@@ -38,19 +38,12 @@ export default function KineticMaskHero({
   const [mediaFullyExpanded, setMediaFullyExpanded] = useState(false);
   const [touchStartY, setTouchStartY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
     check();
     window.addEventListener("resize", check);
-
-    // Check if device is iOS
-    const checkIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    setIsIOS(checkIOS);
-
     return () => window.removeEventListener("resize", check);
   }, []);
 
@@ -345,133 +338,7 @@ export default function KineticMaskHero({
     ["rgb(255,255,255)", "rgb(255,255,255)", "rgb(0,0,0)", "rgb(0,0,0)"]
   );
 
-  if (isIOS) {
-    return (
-      <div className="relative w-full h-[100dvh] overflow-hidden bg-[#0A1628]">
-        {/* Layer 1: Full Background Video playing underneath */}
-        <video
-          ref={videoRef}
-          src={mediaSrc}
-          poster={posterSrc}
-          crossOrigin="anonymous"
-          autoPlay
-          muted
-          loop
-          playsInline
-          disablePictureInPicture
-          disableRemotePlayback
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            zIndex: 0,
-          }}
-        />
 
-        {/* Layer 2: Zooming and Fading Cover Layer (image + overlays + text) */}
-        <motion.div
-          className="absolute inset-0 z-10 pointer-events-none select-none"
-          style={{
-            scale: scale,
-            opacity: bgOpacity,
-            willChange: "transform, opacity",
-          }}
-        >
-          {/* Grayscale Background Image */}
-          <img
-            src={bgImageSrc}
-            alt="Aerial view"
-            className="w-full h-full object-cover filter grayscale contrast-125 brightness-[0.45]"
-          />
-          {/* Luxury Blue Duotone Overlay */}
-          <div className="absolute inset-0 bg-[#0A1628] mix-blend-multiply opacity-90" />
-
-          {/* Golden outline and shadow SVG overlay (scaled with the cover) */}
-          <svg
-            className="absolute inset-0 w-full h-full"
-            viewBox="0 0 1000 1000"
-            preserveAspectRatio="xMidYMid slice"
-          >
-            <defs>
-              <linearGradient id="gold-stroke-gradient-ios" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FFE57F" />
-                <stop offset="30%" stopColor="#FFD700" />
-                <stop offset="100%" stopColor="#FF9100" />
-              </linearGradient>
-            </defs>
-
-            {/* 3D Architectural Shadow */}
-            <g
-              style={{
-                transformOrigin: isMobile ? "450px 430px" : "430px 470px",
-              }}
-            >
-              <text
-                x="505" y={isMobile ? "435" : "475"}
-                textAnchor="middle" dominantBaseline="middle"
-                fill="#050C16"
-                className="font-sans font-black tracking-tighter opacity-80"
-                style={{ fontSize: isMobile ? "90px" : "125px", letterSpacing: isMobile ? "-1px" : "-2px" }}
-              >
-                SUNNEST
-              </text>
-              <text
-                x="512" y={isMobile ? "510" : "550"}
-                textAnchor="middle" dominantBaseline="middle"
-                fill="#050C16"
-                className="font-sans font-bold tracking-[0.35em] opacity-80"
-                style={{ fontSize: isMobile ? "45px" : "65px" }}
-              >
-                POWER
-              </text>
-            </g>
-
-            {/* Liquid Gold Outline */}
-            <g
-              style={{
-                transformOrigin: isMobile ? "450px 430px" : "430px 470px",
-              }}
-            >
-              <text
-                x="500" y={isMobile ? "430" : "470"}
-                textAnchor="middle" dominantBaseline="middle"
-                fill="none" stroke="url(#gold-stroke-gradient-ios)" strokeWidth="2"
-                className="font-sans font-black tracking-tighter"
-                style={{ fontSize: isMobile ? "90px" : "125px", letterSpacing: isMobile ? "-1px" : "-2px" }}
-              >
-                SUNNEST
-              </text>
-              <text
-                x="507" y={isMobile ? "505" : "545"}
-                textAnchor="middle" dominantBaseline="middle"
-                fill="none" stroke="url(#gold-stroke-gradient-ios)" strokeWidth="1.5"
-                className="font-sans font-bold tracking-[0.35em]"
-                style={{ fontSize: isMobile ? "45px" : "65px" }}
-              >
-                POWER
-              </text>
-            </g>
-          </svg>
-        </motion.div>
-
-        {/* Layer 3: Elegant Technical Spec Overlays (fades out as we zoom) */}
-        <motion.div
-          className="absolute inset-x-0 top-[58%] lg:top-auto lg:bottom-12 z-20 flex flex-col items-center justify-center gap-3 pointer-events-none text-center px-6"
-          style={{ opacity: contentOpacity }}
-        >
-          <p className="max-w-md text-xs md:text-sm font-medium text-white/65 leading-relaxed">
-            High-yield solar power systems engineered for residential autonomy and commercial savings. We design, permit, and commission lifetime clean energy infrastructure across India.
-          </p>
-
-          <span className="text-xs font-serif italic text-yellow-400 tracking-widest opacity-80">
-            Scroll to enter the grid
-          </span>
-        </motion.div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative w-full h-[100dvh] overflow-hidden bg-[#0A1628]">
