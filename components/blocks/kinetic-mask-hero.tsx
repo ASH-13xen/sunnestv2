@@ -259,79 +259,38 @@ export default function KineticMaskHero({
       if (!touchStartY) return;
       const deltaY = touchStartY - e.touches[0].clientY;
 
-      if (AUTO_ZOOM_TRIGGER) {
-        // --- 1. SINGLE-SCROLL TRIGGER MODE ---
-        if (
-          deltaY > 20 &&
-          !mediaFullyExpanded &&
-          targetProgress.current !== 1
-        ) {
-          e.preventDefault();
-          targetProgress.current = 1;
-          isAnimating.current = true;
-          if (autoZoomTimeoutRef.current)
-            clearTimeout(autoZoomTimeoutRef.current);
+      // Touch always uses single-swipe trigger regardless of AUTO_ZOOM_TRIGGER —
+      // one decisive swipe starts the cinematic zoom, not many small increments.
+      if (deltaY > 20 && !mediaFullyExpanded && targetProgress.current !== 1) {
+        e.preventDefault();
+        targetProgress.current = 1;
+        isAnimating.current = true;
+        if (autoZoomTimeoutRef.current) clearTimeout(autoZoomTimeoutRef.current);
 
-          animate(progressVal, 1, {
-            duration: AUTO_ZOOM_DURATION,
-            ease: [0.16, 1, 0.3, 1],
-            onComplete: () => {
-              autoZoomTimeoutRef.current = setTimeout(() => {
-                setMediaFullyExpanded(true);
-                onExpansionChangeRef.current?.(true);
-                isAnimating.current = false;
-              }, AUTO_ZOOM_HOLD_DELAY);
-            },
-          });
-        } else if (
-          deltaY < -20 &&
-          mediaFullyExpanded &&
-          targetProgress.current !== 0 &&
-          window.scrollY <= 5
-        ) {
-          e.preventDefault();
-          targetProgress.current = 0;
-          isAnimating.current = true;
-          setMediaFullyExpanded(false);
-          onExpansionChangeRef.current?.(false);
-          animate(progressVal, 0, {
-            duration: REVERSE_DURATION,
-            ease: [0.16, 1, 0.3, 1],
-            onComplete: () => {
+        animate(progressVal, 1, {
+          duration: AUTO_ZOOM_DURATION,
+          ease: [0.16, 1, 0.3, 1],
+          onComplete: () => {
+            autoZoomTimeoutRef.current = setTimeout(() => {
+              setMediaFullyExpanded(true);
+              onExpansionChangeRef.current?.(true);
               isAnimating.current = false;
-            },
-          });
-        } else if (isAnimating.current) {
-          e.preventDefault();
-        }
-      } else {
-        // --- 2. DIRECT SCROLL-LINKED MODE (WITH SCROLL BUFFER) ---
-        const maxProgressLimit = 1.0 + SCROLL_HOLD_BUFFER;
-
-        if (mediaFullyExpanded && deltaY < -20 && window.scrollY <= 5) {
-          setMediaFullyExpanded(false);
-          onExpansionChangeRef.current?.(false);
-          targetProgress.current = 1.0;
-          e.preventDefault();
-          animate(progressVal, 1.0, { duration: 0.1, ease: "linear" });
-        } else if (!mediaFullyExpanded) {
-          e.preventDefault();
-          const factor = deltaY < 0 ? 0.008 : 0.005;
-          const current = progressVal.get();
-          const newProgress = Math.min(
-            Math.max(current + deltaY * factor, 0),
-            maxProgressLimit,
-          );
-
-          animate(progressVal, newProgress, { duration: 0.15, ease: "linear" });
-
-          if (newProgress >= maxProgressLimit) {
-            setMediaFullyExpanded(true);
-            onExpansionChangeRef.current?.(true);
-            targetProgress.current = maxProgressLimit;
-          }
-          setTouchStartY(e.touches[0].clientY);
-        }
+            }, AUTO_ZOOM_HOLD_DELAY);
+          },
+        });
+      } else if (deltaY < -20 && mediaFullyExpanded && targetProgress.current !== 0 && window.scrollY <= 5) {
+        e.preventDefault();
+        targetProgress.current = 0;
+        isAnimating.current = true;
+        setMediaFullyExpanded(false);
+        onExpansionChangeRef.current?.(false);
+        animate(progressVal, 0, {
+          duration: REVERSE_DURATION,
+          ease: [0.16, 1, 0.3, 1],
+          onComplete: () => { isAnimating.current = false; },
+        });
+      } else if (isAnimating.current) {
+        e.preventDefault();
       }
     };
 

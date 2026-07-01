@@ -84,6 +84,17 @@ export default function TextHighlighted() {
     pageTextRef.current = pageText;
   }, [goldColor, pageText]);
 
+  // When theme changes, clear GSAP's stale inline colours so the parent <p>
+  // cascade (which React keeps current) takes effect immediately.
+  useEffect(() => {
+    const paraEl = paragraphRef.current;
+    if (!paraEl) return;
+    paraEl.querySelectorAll<HTMLSpanElement>("[data-word]").forEach((s) => {
+      s.style.removeProperty("color");
+      s.style.opacity = "1";
+    });
+  }, [theme]);
+
   useEffect(() => {
     const section  = sectionRef.current;
     const paraEl   = paragraphRef.current;
@@ -106,10 +117,12 @@ export default function TextHighlighted() {
     let resizeHandler: (() => void) | null = null;
 
     (async () => {
-      const { gsap }         = await import("gsap");
+      const { gsap }          = await import("gsap");
       const { ScrollTrigger } = await import("gsap/ScrollTrigger");
       gsap.registerPlugin(ScrollTrigger);
       if (!isMounted) return;
+
+      const isMobile = () => window.innerWidth < 768;
 
       const fitHeight = () => {
         const pEl = paraEl.querySelector("p") as HTMLElement | null;
@@ -119,6 +132,7 @@ export default function TextHighlighted() {
       };
 
       const measure = () => {
+        if (isMobile()) { deltas = []; return; }
         gsap.set(hlSpans, { x: 0, y: 0 });
         const sRect = section.getBoundingClientRect();
         const froms = hlSpans.map((s) => {
@@ -150,22 +164,21 @@ export default function TextHighlighted() {
 
       window.addEventListener("resize", resizeHandler);
 
-      allSpans.forEach((s) => {
-        s.style.color   = pageTextRef.current;
-        s.style.opacity = "1";
-      });
-
       st = ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: () => `+=${section.offsetHeight * 1.2}`,
+        end: () => `+=${section.offsetHeight * (isMobile() ? 0.9 : 1.2)}`,
         scrub: 0.4,
         pin: true,
         anticipatePin: 1,
+        // transform-based pinning avoids position:fixed jank on iOS Safari
+        pinType: "transform",
+        invalidateOnRefresh: true,
         onUpdate(self) {
           const p    = self.progress;
           const gold = goldRef.current;
           const pt   = pageTextRef.current;
+          const mob  = isMobile();
 
           if (p <= 0.42) {
             const t1 = p / 0.42;
@@ -184,16 +197,20 @@ export default function TextHighlighted() {
               if (s.dataset.highlight !== "true") {
                 s.style.opacity = "0";
               } else {
-                s.style.color   = goldRef.current;
+                s.style.color   = gold;
                 s.style.opacity = "1";
               }
             });
 
-            const t2 = (p - 0.42) / 0.58;
-            hlSpans.forEach((s, i) => {
-              const d = deltas[i] ?? { x: 0, y: 0 };
-              gsap.set(s, { x: d.x * t2, y: d.y * t2 });
-            });
+            // Phase 2: word-convergence only on desktop — on mobile the
+            // getBoundingClientRect deltas are unreliable on wrapped lines.
+            if (!mob && deltas.length) {
+              const t2 = (p - 0.42) / 0.58;
+              hlSpans.forEach((s, i) => {
+                const d = deltas[i] ?? { x: 0, y: 0 };
+                gsap.set(s, { x: d.x * t2, y: d.y * t2 });
+              });
+            }
           }
         },
       });
