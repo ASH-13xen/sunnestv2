@@ -5,16 +5,16 @@ import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 
 // ─── Kinetic Mask Config Variables ──────────────────────────────────────────
 // You can adjust these variables directly to fine-tune the zoom animation:
-const MAX_ZOOM_SCALE       = 100;           // Max zoom size for letters (e.g. 85, 550, 1500)
-const SCROLL_SENSITIVITY   = 0.004;        // Sensitivity of manual scroll (e.g. 0.0006, 0.0012)
-const ZOOM_EASING_POWER    = 4;             // Easing power curve (higher = starts slower, speeds up at the end)
-const AUTO_ZOOM_TRIGGER    = false;         // TRUE = zoom completely on a single scroll flick; FALSE = zoom links directly to wheel scroll ticks
-const AUTO_ZOOM_DURATION   = 0.95;          // Animation duration in seconds when in single-scroll trigger mode (AUTO_ZOOM_TRIGGER = true)
-const REVERSE_DURATION     = 0.85;          // Duration in seconds when zooming out in single-scroll trigger mode (AUTO_ZOOM_TRIGGER = true)
+const MAX_ZOOM_SCALE = 100; // Max zoom size for letters (e.g. 85, 550, 1500)
+const SCROLL_SENSITIVITY = 0.004; // Sensitivity of manual scroll (e.g. 0.0006, 0.0012)
+const ZOOM_EASING_POWER = 4; // Easing power curve (higher = starts slower, speeds up at the end)
+const AUTO_ZOOM_TRIGGER = false; // TRUE = zoom completely on a single scroll flick; FALSE = zoom links directly to wheel scroll ticks
+const AUTO_ZOOM_DURATION = 0.95; // Animation duration in seconds when in single-scroll trigger mode (AUTO_ZOOM_TRIGGER = true)
+const REVERSE_DURATION = 0.85; // Duration in seconds when zooming out in single-scroll trigger mode (AUTO_ZOOM_TRIGGER = true)
 
 // --- Scroll Cushion/Hold Configuration ---
-const SCROLL_HOLD_BUFFER   = 0.50;          // Extra manual scroll depth (0.0 to 1.0+) the user must scroll through while the video stays fully zoomed before unlocking the page (e.g. 0.35, 0.5)
-const AUTO_ZOOM_HOLD_DELAY = 600;           // Delay in milliseconds after auto-zoom finishes before scroll is unlocked (e.g. 300, 600)
+const SCROLL_HOLD_BUFFER = 0.5; // Extra manual scroll depth (0.0 to 1.0+) the user must scroll through while the video stays fully zoomed before unlocking the page (e.g. 0.35, 0.5)
+const AUTO_ZOOM_HOLD_DELAY = 600; // Delay in milliseconds after auto-zoom finishes before scroll is unlocked (e.g. 300, 600)
 // ──────────────────────────────────────────────────────────────────────────
 
 interface KineticMaskHeroProps {
@@ -71,7 +71,7 @@ export default function KineticMaskHero({
     if (!vid) return;
     vid.defaultMuted = true;
     vid.muted = true;
-    
+
     if (isActive) {
       if (mediaFullyExpanded) {
         vid.play().catch((err) => {
@@ -80,7 +80,8 @@ export default function KineticMaskHero({
       } else {
         // Prime the video on iOS Safari/Chrome to force frame decoding while keeping it paused
         if (vid.paused && vid.currentTime === 0) {
-          vid.play()
+          vid
+            .play()
             .then(() => {
               // Pause immediately after play resolves to capture first frame
               vid.pause();
@@ -118,10 +119,19 @@ export default function KineticMaskHero({
           canvas.width = cw;
           canvas.height = ch;
         }
-        const scale = Math.max(canvas.width / video.videoWidth, canvas.height / video.videoHeight);
+        const scale = Math.max(
+          canvas.width / video.videoWidth,
+          canvas.height / video.videoHeight,
+        );
         const dw = video.videoWidth * scale;
         const dh = video.videoHeight * scale;
-        ctx.drawImage(video, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
+        ctx.drawImage(
+          video,
+          (canvas.width - dw) / 2,
+          (canvas.height - dh) / 2,
+          dw,
+          dh,
+        );
       }
       rafId = requestAnimationFrame(draw);
     };
@@ -165,11 +175,16 @@ export default function KineticMaskHero({
     const handleWheel = (e: WheelEvent) => {
       if (AUTO_ZOOM_TRIGGER) {
         // --- 1. SINGLE-SCROLL TRIGGER MODE ---
-        if (e.deltaY > 0 && !mediaFullyExpanded && targetProgress.current !== 1) {
+        if (
+          e.deltaY > 0 &&
+          !mediaFullyExpanded &&
+          targetProgress.current !== 1
+        ) {
           e.preventDefault();
           targetProgress.current = 1;
           isAnimating.current = true;
-          if (autoZoomTimeoutRef.current) clearTimeout(autoZoomTimeoutRef.current);
+          if (autoZoomTimeoutRef.current)
+            clearTimeout(autoZoomTimeoutRef.current);
 
           animate(progressVal, 1, {
             duration: AUTO_ZOOM_DURATION,
@@ -181,10 +196,14 @@ export default function KineticMaskHero({
                 onExpansionChangeRef.current?.(true);
                 isAnimating.current = false;
               }, AUTO_ZOOM_HOLD_DELAY);
-            }
+            },
           });
-        }
-        else if (e.deltaY < 0 && mediaFullyExpanded && targetProgress.current !== 0 && window.scrollY <= 5) {
+        } else if (
+          e.deltaY < 0 &&
+          mediaFullyExpanded &&
+          targetProgress.current !== 0 &&
+          window.scrollY <= 5
+        ) {
           e.preventDefault();
           targetProgress.current = 0;
           isAnimating.current = true;
@@ -195,10 +214,9 @@ export default function KineticMaskHero({
             ease: [0.16, 1, 0.3, 1],
             onComplete: () => {
               isAnimating.current = false;
-            }
+            },
           });
-        }
-        else if (isAnimating.current) {
+        } else if (isAnimating.current) {
           e.preventDefault();
         }
       } else {
@@ -216,7 +234,10 @@ export default function KineticMaskHero({
           const current = progressVal.get();
 
           // Allow progress to go beyond 1.0 up to maxProgressLimit to create a scroll pause
-          const newProgress = Math.min(Math.max(current + e.deltaY * SCROLL_SENSITIVITY, 0), maxProgressLimit);
+          const newProgress = Math.min(
+            Math.max(current + e.deltaY * SCROLL_SENSITIVITY, 0),
+            maxProgressLimit,
+          );
 
           // Smoothly animate to the new progress step to avoid wheel tick stutters
           animate(progressVal, newProgress, { duration: 0.15, ease: "linear" });
@@ -231,7 +252,8 @@ export default function KineticMaskHero({
       }
     };
 
-    const handleTouchStart = (e: TouchEvent) => setTouchStartY(e.touches[0].clientY);
+    const handleTouchStart = (e: TouchEvent) =>
+      setTouchStartY(e.touches[0].clientY);
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!touchStartY) return;
@@ -239,11 +261,16 @@ export default function KineticMaskHero({
 
       if (AUTO_ZOOM_TRIGGER) {
         // --- 1. SINGLE-SCROLL TRIGGER MODE ---
-        if (deltaY > 20 && !mediaFullyExpanded && targetProgress.current !== 1) {
+        if (
+          deltaY > 20 &&
+          !mediaFullyExpanded &&
+          targetProgress.current !== 1
+        ) {
           e.preventDefault();
           targetProgress.current = 1;
           isAnimating.current = true;
-          if (autoZoomTimeoutRef.current) clearTimeout(autoZoomTimeoutRef.current);
+          if (autoZoomTimeoutRef.current)
+            clearTimeout(autoZoomTimeoutRef.current);
 
           animate(progressVal, 1, {
             duration: AUTO_ZOOM_DURATION,
@@ -254,9 +281,14 @@ export default function KineticMaskHero({
                 onExpansionChangeRef.current?.(true);
                 isAnimating.current = false;
               }, AUTO_ZOOM_HOLD_DELAY);
-            }
+            },
           });
-        } else if (deltaY < -20 && mediaFullyExpanded && targetProgress.current !== 0 && window.scrollY <= 5) {
+        } else if (
+          deltaY < -20 &&
+          mediaFullyExpanded &&
+          targetProgress.current !== 0 &&
+          window.scrollY <= 5
+        ) {
           e.preventDefault();
           targetProgress.current = 0;
           isAnimating.current = true;
@@ -267,7 +299,7 @@ export default function KineticMaskHero({
             ease: [0.16, 1, 0.3, 1],
             onComplete: () => {
               isAnimating.current = false;
-            }
+            },
           });
         } else if (isAnimating.current) {
           e.preventDefault();
@@ -286,7 +318,10 @@ export default function KineticMaskHero({
           e.preventDefault();
           const factor = deltaY < 0 ? 0.008 : 0.005;
           const current = progressVal.get();
-          const newProgress = Math.min(Math.max(current + deltaY * factor, 0), maxProgressLimit);
+          const newProgress = Math.min(
+            Math.max(current + deltaY * factor, 0),
+            maxProgressLimit,
+          );
 
           animate(progressVal, newProgress, { duration: 0.15, ease: "linear" });
 
@@ -304,7 +339,10 @@ export default function KineticMaskHero({
       const target = e.target as HTMLElement;
       const navElement = target.closest("nav");
       if (navElement) {
-        const isLogoClick = target.closest("span") && (target.textContent?.includes("Sun") || target.textContent?.includes("Nest"));
+        const isLogoClick =
+          target.closest("span") &&
+          (target.textContent?.includes("Sun") ||
+            target.textContent?.includes("Nest"));
         if (isLogoClick) {
           setMediaFullyExpanded(false);
           onExpansionChangeRef.current?.(false);
@@ -343,9 +381,14 @@ export default function KineticMaskHero({
 
   // Map progressVal directly to styling transforms via useTransform
   // Scale is capped at 85x to avoid vector path rasterization lag in browsers
-  const scale = useTransform(progressVal, (v) => 1 + Math.pow(Math.min(v, 1.0), ZOOM_EASING_POWER) * MAX_ZOOM_SCALE);
+  const scale = useTransform(
+    progressVal,
+    (v) => 1 + Math.pow(Math.min(v, 1.0), ZOOM_EASING_POWER) * MAX_ZOOM_SCALE,
+  );
   const bgOpacity = useTransform(progressVal, (v) => 1 - Math.min(v, 1.0));
-  const contentOpacity = useTransform(progressVal, (v) => Math.max(0, 1 - Math.min(v, 1.0) * 3));
+  const contentOpacity = useTransform(progressVal, (v) =>
+    Math.max(0, 1 - Math.min(v, 1.0) * 3),
+  );
 
   // Inverted mask: white = cover opaque (video hidden), black = cover transparent (video visible).
   // White text punches holes in the cover, revealing the canvas below.
@@ -353,7 +396,7 @@ export default function KineticMaskHero({
   const coverMaskBg = useTransform(
     progressVal,
     [0, 0.8, 1.0, 1.0 + SCROLL_HOLD_BUFFER],
-    ["rgb(255,255,255)", "rgb(255,255,255)", "rgb(0,0,0)", "rgb(0,0,0)"]
+    ["rgb(255,255,255)", "rgb(255,255,255)", "rgb(0,0,0)", "rgb(0,0,0)"],
   );
 
   const transformOrigin = isMobile ? "450px 430px" : "430px 470px";
@@ -403,7 +446,13 @@ export default function KineticMaskHero({
       >
         <defs>
           {/* Gold gradient for outline stroke */}
-          <linearGradient id="gold-stroke-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient
+            id="gold-stroke-gradient"
+            x1="0%"
+            y1="0%"
+            x2="100%"
+            y2="100%"
+          >
             <stop offset="0%" stopColor="#FFE57F" />
             <stop offset="30%" stopColor="#FFD700" />
             <stop offset="100%" stopColor="#FF9100" />
@@ -508,8 +557,8 @@ export default function KineticMaskHero({
           </text>
         </motion.g>
 
-        {/* ── Liquid Gold Outline (above cover, fades on zoom) ── */}
-        <motion.g style={{ transformOrigin, scale, opacity: bgOpacity }}>
+        {/* ── Liquid Gold Outline (desktop only — gold stroke bleeds visually on mobile) ── */}
+        {!isMobile && <motion.g style={{ transformOrigin, scale, opacity: bgOpacity }}>
           <text
             x="500"
             y={isMobile ? "430" : "470"}
@@ -539,7 +588,7 @@ export default function KineticMaskHero({
           >
             POWER
           </text>
-        </motion.g>
+        </motion.g>}
       </svg>
 
       {/* Scroll hint (fades out as we zoom) */}
@@ -548,7 +597,9 @@ export default function KineticMaskHero({
         style={{ opacity: contentOpacity }}
       >
         <p className="max-w-md text-xs md:text-sm font-medium text-white/65 leading-relaxed">
-          High-yield solar power systems engineered for residential autonomy and commercial savings. We design, permit, and commission lifetime clean energy infrastructure across India.
+          High-yield solar power systems engineered for residential autonomy and
+          commercial savings. We design, permit, and commission lifetime clean
+          energy infrastructure across India.
         </p>
         <span className="text-xs font-serif italic text-yellow-400 tracking-widest opacity-80">
           Scroll to enter the grid
