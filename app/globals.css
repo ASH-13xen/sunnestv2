@@ -1,26 +1,106 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FBF8F0;
+  --foreground: #1a1a1a;
+  --bg-cream: #FBF8F0;
+  --bg-warm: #F5EFE4;
+  --navy-900: #0A1628;
+  --navy-800: #0D1F3C;
+  --gold-400: #FFCA28;
+  --gold-500: #D4A017;
+  --gold-600: #B38600;
+  --text-dark: #0f2744;
+  --text-mid: #4B5563;
+  --text-light: #9CA3AF;
+  --card-bg: #ffffff;
+
+  /* Responsive Section Padding variables (adjust these to change gaps) */
+  --section-padding-top: 72px;
+  --section-padding-bottom: 72px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --section-padding-top: 120px;
+    --section-padding-bottom: 100px;
+  }
+}
+
+[data-theme="night"] {
+  --background: #0A1628;
+  --foreground: #FBF8F0;
+  --bg-cream: #0A1628;
+  --bg-warm: #0D1F3C;
+  --navy-900: #0D1F3C;
+  --navy-800: #122548;
+  --gold-400: #60A5FA;
+  --gold-500: #4A90D9;
+  --gold-600: #2563EB;
+  --text-dark: #FBF8F0;
+  --text-mid: rgba(251, 248, 240, 0.70);
+  --text-light: rgba(251, 248, 240, 0.45);
+  --card-bg: #0D1F3C;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-plus-jakarta), var(--font-geist-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-playfair), serif;
+
+  --color-bg-cream: var(--bg-cream);
+  --color-bg-warm: var(--bg-warm);
+  --color-navy-900: var(--navy-900);
+  --color-navy-800: var(--navy-800);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-text-dark: var(--text-dark);
+  --color-text-mid: var(--text-mid);
+  --color-text-light: var(--text-light);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
+html,
 body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-plus-jakarta), var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Cards pick up the theme card background */
+.solution-card-bg {
+  background-color: var(--card-bg);
+}
+
+/* Night mode: solution cards use navy */
+[data-theme="night"] .solution-card-inner {
+  background-color: var(--navy-800) !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+
+/* Night mode: solutions section bottom bg */
+[data-theme="night"] .solutions-bottom-bg {
+  background-color: var(--navy-900) !important;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
