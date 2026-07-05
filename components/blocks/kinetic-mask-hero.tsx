@@ -285,12 +285,19 @@ export default function KineticMaskHero({
       const expanded = mediaFullyExpandedRef.current;
       const deltaY   = startY - e.touches[0].clientY;
 
-      if (!expanded && deltaY > SWIPE_DEAD_PX) {
+      if (!expanded) {
+        // Prevent default for ANY downward movement here — not just past the
+        // dead zone — otherwise the browser's native scroll/bounce sneaks in
+        // during the first ~12px of drag and the scroll-lock below snaps it
+        // back, producing a visible "scrolls down a little then springs back"
+        // stutter on mobile.
         e.preventDefault();
-        const progress = Math.min((deltaY - SWIPE_DEAD_PX) / SWIPE_FULL_PX, 1.0);
-        progressVal.set(progress);
-        targetProgress.current = progress;
-      } else if (expanded && window.scrollY <= 5 && deltaY < -SWIPE_DEAD_PX) {
+        if (deltaY > SWIPE_DEAD_PX) {
+          const progress = Math.min((deltaY - SWIPE_DEAD_PX) / SWIPE_FULL_PX, 1.0);
+          progressVal.set(progress);
+          targetProgress.current = progress;
+        }
+      } else if (window.scrollY <= 5 && deltaY < -SWIPE_DEAD_PX) {
         e.preventDefault();
         // Map swipe-up distance back to reverse progress (1 → 0)
         const swipeDist       = Math.max(deltaY + SWIPE_DEAD_PX, -SWIPE_FULL_PX);
@@ -402,7 +409,20 @@ export default function KineticMaskHero({
   const transformOrigin = isMobile ? "450px 430px" : "430px 470px";
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden" style={{ backgroundColor: pageBg, transition: "background-color 0.4s ease" }}>
+    <div
+      className="relative w-full h-dvh overflow-hidden"
+      style={{
+        backgroundColor: pageBg,
+        transition: "background-color 0.4s ease",
+        // While the zoom hasn't finished, fully own touch gestures so the
+        // browser never starts its own native scroll/rubber-band under us —
+        // that's what caused the "scrolls down a little then snaps back"
+        // stutter on mobile. Release it once expanded so normal page scroll
+        // (and the swipe-to-reverse handler) works as expected.
+        touchAction: mediaFullyExpanded ? "auto" : "none",
+        overscrollBehavior: mediaFullyExpanded ? "auto" : "none",
+      }}
+    >
       {/* Dark backdrop */}
       <div className="absolute inset-0 z-0" style={{ backgroundColor: pageBg, transition: "background-color 0.4s ease" }} />
 

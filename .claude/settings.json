@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node diag.js)"
+      "Bash(node diag.js)",
+      "Bash(node mobile_touch.js)",
+      "Bash(node mobile_touch2.js)"
     ]
   }
 }
