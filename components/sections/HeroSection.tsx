@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import KineticMaskHero from "@/components/blocks/kinetic-mask-hero";
 
-const BG_SRC    = "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?w=1920&auto=format&fit=crop&q=60";
+const BG_SRC    = "/images/hero-bg.png";
 const MEDIA_SRC = "/hero-bg.mp4";
 
 // ─── Design Rectangle Variables ─────────────────────────────────────────────

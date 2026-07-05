@@ -42,13 +42,6 @@ function IconLinkedin() {
     </svg>
   );
 }
-function IconX() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  );
-}
 function IconFacebook() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -58,10 +51,9 @@ function IconFacebook() {
 }
 
 const SOCIALS = [
-  { label: "Instagram", icon: <IconInstagram />, href: "#" },
-  { label: "LinkedIn",  icon: <IconLinkedin />,  href: "#" },
-  { label: "X",         icon: <IconX />,         href: "#" },
-  { label: "Facebook",  icon: <IconFacebook />,  href: "#" },
+  { label: "Instagram", icon: <IconInstagram />, href: "https://www.instagram.com/sunnestpower?igsh=MWNkYmcxcDg0bnBhcw%3D%3D&utm_source=qr" },
+  { label: "LinkedIn",  icon: <IconLinkedin />,  href: "https://www.linkedin.com/company/sunnest-power/" },
+  { label: "Facebook",  icon: <IconFacebook />,  href: "https://www.facebook.com/share/161aZ8ZhACb/?mibextid=wwXIfr" },
 ];
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -213,9 +205,9 @@ export default function Footer() {
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             {[
-              { Icon: Mail,    text: "hello@sunnestpower.com", href: "mailto:hello@sunnestpower.com" },
-              { Icon: Phone,   text: "1-800-786-6378",         href: "tel:18007866378" },
-              { Icon: MapPin,  text: "Pan India Coverage",     href: null },
+              { Icon: Mail,    text: "sales@sunnestpower.com", href: "mailto:sales@sunnestpower.com" },
+              { Icon: Phone,   text: "+91-9109102662",         href: "tel:+919109102662" },
+              { Icon: MapPin,  text: "A-09/10 Mahavir Gaushala Complex, Moudhapara Road, Raipur", href: null },
             ].map(({ Icon, text, href }) => (
               <div key={text} style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
                 <div style={{ width: "28px", height: "28px", borderRadius: "7px", background: `${gold}12`, border: `1px solid ${gold}25`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: "1px", transition: "background 0.4s ease, border-color 0.4s ease" }}>

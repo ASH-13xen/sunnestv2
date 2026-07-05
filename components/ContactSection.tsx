@@ -43,9 +43,9 @@ const LinkedinIcon = ({ size = 24, ...props }: CustomIconProps) => (
   </svg>
 );
 
-const TwitterIcon = ({ size = 24, ...props }: CustomIconProps) => (
+const FacebookIcon = ({ size = 24, ...props }: CustomIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+    <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
   </svg>
 );
 
@@ -103,7 +103,7 @@ export default function ContactSection() {
   const inputBorder  = isNight ? "rgba(255,255,255,0.08)" : "rgba(10,22,40,0.12)";
   const cardText     = isNight ? "#f2f5ea" : "#0A1628";
   const cardText70   = isNight ? "rgba(242,245,234,0.75)" : "rgba(10,22,40,0.75)";
-  const cardText55   = isNight ? "rgba(242,245,234,0.55)" : "rgba(10,22,40,0.60)";
+  const cardText55   = isNight ? "rgba(242,245,234,0.68)" : "rgba(10,22,40,0.60)";
   const cardText30   = isNight ? "rgba(242,245,234,0.30)" : "rgba(10,22,40,0.35)";
   const disabledBg   = isNight ? "rgba(255,255,255,0.06)" : "rgba(10,22,40,0.05)";
 
@@ -806,7 +806,7 @@ export default function ContactSection() {
         >
           {/* Card 1: Direct Email */}
           <motion.a
-            href="mailto:hello@sunnestpower.com"
+            href="mailto:sales@sunnestpower.com"
             whileHover={{ y: -5, borderColor: goldColor, boxShadow: `0 12px 30px ${goldColor}15` }}
             style={{
               background: cardBg,
@@ -841,14 +841,14 @@ export default function ContactSection() {
                 Direct Email
               </div>
               <span style={{ fontSize: "0.95rem", color: cardText, fontWeight: 800 }}>
-                hello@sunnestpower.com
+                sales@sunnestpower.com
               </span>
             </div>
           </motion.a>
 
           {/* Card 2: Toll-Free Phone */}
           <motion.a
-            href="tel:18007866378"
+            href="tel:+919109102662"
             whileHover={{ y: -5, borderColor: goldColor, boxShadow: `0 12px 30px ${goldColor}15` }}
             style={{
               background: cardBg,
@@ -883,7 +883,7 @@ export default function ContactSection() {
                 Toll-Free Phone
               </div>
               <span style={{ fontSize: "0.95rem", color: cardText, fontWeight: 800 }}>
-                1-800-786-6378
+                +91-9109102662
               </span>
             </div>
           </motion.a>
@@ -944,10 +944,9 @@ export default function ContactSection() {
           </span>
           <div style={{ display: "flex", gap: "16px" }}>
             {[
-              { id: "insta", icon: InstagramIcon, href: "https://instagram.com" },
-              { id: "linkedin", icon: LinkedinIcon, href: "https://linkedin.com" },
-              { id: "twitter", icon: TwitterIcon, href: "https://twitter.com" },
-              { id: "youtube", icon: YoutubeIcon, href: "https://youtube.com" },
+              { id: "insta", icon: InstagramIcon, href: "https://www.instagram.com/sunnestpower?igsh=MWNkYmcxcDg0bnBhcw%3D%3D&utm_source=qr" },
+              { id: "linkedin", icon: LinkedinIcon, href: "https://www.linkedin.com/company/sunnest-power/" },
+              { id: "facebook", icon: FacebookIcon, href: "https://www.facebook.com/share/161aZ8ZhACb/?mibextid=wwXIfr" },
             ].map((soc) => {
               const IconComp = soc.icon;
               return (

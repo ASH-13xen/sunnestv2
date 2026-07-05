@@ -119,11 +119,18 @@ export default function ProcessSection() {
   useEffect(() => {
     let st: any = null;
     let stMobile: any = null;
+    let isMounted = true;
 
-    (async () => {
+    async function init() {
       const { gsap } = await import("gsap");
       const { ScrollTrigger } = await import("gsap/ScrollTrigger");
       gsap.registerPlugin(ScrollTrigger);
+      if (!isMounted) return;
+
+      st?.kill();
+      stMobile?.kill();
+      st = null;
+      stMobile = null;
 
       const section      = sectionRef.current;
       const desktopStage = desktopStageRef.current;
@@ -147,6 +154,8 @@ export default function ProcessSection() {
           end: `+=${window.innerHeight * 4}`,
           scrub: 1,
           pin: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
           onUpdate(self: any) {
             const p = self.progress;
             dCards.forEach((card, i) => {
@@ -174,6 +183,8 @@ export default function ProcessSection() {
           end: `+=${window.innerHeight * 4}`,
           scrub: 1,
           pin: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
           onUpdate(self: any) {
             const p = self.progress;
             mCards.forEach((card, i) => {
@@ -188,9 +199,24 @@ export default function ProcessSection() {
           },
         });
       }
-    })();
+    }
 
-    return () => { st?.kill(); stMobile?.kill(); };
+    init();
+
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(init, 250);
+    };
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("resize", onResize);
+      clearTimeout(resizeTimer);
+      st?.kill();
+      stMobile?.kill();
+    };
   }, []);
 
   return (
@@ -252,7 +278,7 @@ export default function ProcessSection() {
         <p
           style={{
             fontSize:  "0.92rem",
-            color:     "rgba(242,245,234,0.42)",
+            color:     "rgba(242,245,234,0.58)",
             maxWidth:  "480px",
             lineHeight: 1.65,
             margin:    0,
@@ -395,7 +421,7 @@ export default function ProcessSection() {
                   style={{
                     fontSize:   "clamp(0.9rem, 1.1vw, 1.05rem)",
                     lineHeight: 1.75,
-                    color:      "rgba(242,245,234,0.52)",
+                    color:      "rgba(242,245,234,0.65)",
                     margin:     0,
                     maxWidth:   "420px",
                   }}
@@ -509,7 +535,7 @@ export default function ProcessSection() {
               >
                 {s.title}
               </h3>
-              <p style={{ fontSize: "0.85rem", lineHeight: 1.65, color: "rgba(242,245,234,0.5)", margin: 0 }}>
+              <p style={{ fontSize: "0.85rem", lineHeight: 1.65, color: "rgba(242,245,234,0.65)", margin: 0 }}>
                 {s.description}
               </p>
             </div>

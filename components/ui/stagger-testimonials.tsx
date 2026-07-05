@@ -108,7 +108,7 @@ function TestimonialCard({
   const cardBg     = isCenter ? "#0A1628" : (isNight ? "#111115" : "#ffffff");
   const cardText   = isCenter ? "#f2f5ea" : pageText;
   const cardBorder = isCenter ? goldColor : (isNight ? "rgba(255,255,255,0.10)" : "rgba(10,22,40,0.13)");
-  const mutedText  = isCenter ? "rgba(242,245,234,0.55)" : (isNight ? "rgba(242,245,234,0.42)" : "rgba(10,22,40,0.48)");
+  const mutedText  = isCenter ? "rgba(242,245,234,0.68)" : (isNight ? "rgba(242,245,234,0.58)" : "rgba(10,22,40,0.48)");
   const diagColor  = isNight ? "rgba(255,255,255,0.10)" : "rgba(10,22,40,0.10)";
   const Icon       = benefit.icon;
 

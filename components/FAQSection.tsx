@@ -39,7 +39,7 @@ export default function FAQSection() {
   // Alternating background theme for visual break
   const pageBg     = isNight ? "#090C12"                : "#F3EFE3";
   const pageText   = isNight ? "#f2f5ea"                : "#0A1628";
-  const pageText45 = isNight ? "rgba(242,245,234,0.45)" : "rgba(10,22,40,0.50)";
+  const pageText45 = isNight ? "rgba(242,245,234,0.62)" : "rgba(10,22,40,0.50)";
   const goldColor  = isNight ? "#60A5FA"                : "#D4A017";
   const rowBg      = isNight ? "#121620"                : "#ffffff";
   const rowBgOpen  = "linear-gradient(165deg, #0A1628 0%, #0c1322 100%)";

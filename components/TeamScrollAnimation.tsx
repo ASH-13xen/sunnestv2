@@ -111,6 +111,7 @@ export default function TeamScrollAnimation() {
           start:   "top bottom",
           end:     "top top",
           scrub:   true,
+          invalidateOnRefresh: true,
           onUpdate(self: any) {
             const p = self.progress;
             members.forEach((member, i) => {
@@ -138,6 +139,8 @@ export default function TeamScrollAnimation() {
           end:     `+=${window.innerHeight * 4}`,
           scrub:   1,
           pin:     true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
           onUpdate(self: any) {
             const p = self.progress;
             cards.forEach((card, i) => {
@@ -185,6 +188,7 @@ export default function TeamScrollAnimation() {
           start:   "top 90%",
           end:     "top 30%",
           scrub:   1.2,
+          invalidateOnRefresh: true,
           onUpdate(self: any) {
             const p = self.progress;
             gsap.set(card, {
@@ -216,7 +220,7 @@ export default function TeamScrollAnimation() {
   }, []);
 
   const pageText   = isNight ? "#f2f5ea"               : "#0A1628";
-  const pageText45 = isNight ? "rgba(242,245,234,0.45)" : "rgba(10,22,40,0.50)";
+  const pageText45 = isNight ? "rgba(242,245,234,0.62)" : "rgba(10,22,40,0.50)";
   const goldColor  = isNight ? "#60A5FA"               : "#D4A017";
 
   return (
@@ -271,14 +275,22 @@ export default function TeamScrollAnimation() {
                 className="relative flex-1 h-full rounded-2xl border border-dashed will-change-transform"
                 style={{ borderColor: `${sol.from}30` }}
               >
-                {/* Placeholder: large initial */}
+                {/* High-Tech Blueprint outline of the sector icon */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
                   <span
                     ref={(el) => { initialsRef.current[i] = el; }}
-                    className="font-black uppercase leading-none select-none will-change-transform"
-                    style={{ fontSize: "clamp(7rem, 16vw, 18rem)", color: sol.from, opacity: 0.15 }}
+                    className="select-none will-change-transform flex items-center justify-center"
+                    style={{ opacity: 0.09 }}
                   >
-                    {sol.initial}
+                    <Icon
+                      strokeWidth={0.6}
+                      style={{
+                        width: "clamp(12rem, 24vw, 28rem)",
+                        height: "clamp(12rem, 24vw, 28rem)",
+                        color: sol.from,
+                        filter: `drop-shadow(0 0 15px ${sol.from}30)`,
+                      }}
+                    />
                   </span>
                 </div>
 
@@ -420,12 +432,19 @@ export default function TeamScrollAnimation() {
 
                 {/* Content portion */}
                 <div className="relative z-10 p-5 bg-[#0C1018]">
-                  {/* Faint watermark initial in background of content */}
+                  {/* Faint watermark icon outline in background of content */}
                   <span
-                    className="absolute bottom-0 right-3 font-black uppercase leading-none select-none pointer-events-none z-0"
-                    style={{ fontSize: "7rem", color: sol.from, opacity: 0.04 }}
+                    className="absolute bottom-0 right-3 select-none pointer-events-none z-0"
+                    style={{ opacity: 0.035 }}
                   >
-                    {sol.initial}
+                    <Icon
+                      strokeWidth={0.6}
+                      style={{
+                        width: "8rem",
+                        height: "8rem",
+                        color: sol.from,
+                      }}
+                    />
                   </span>
 
                   <div className="relative z-10">

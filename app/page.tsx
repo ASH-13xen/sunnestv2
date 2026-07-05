@@ -2,13 +2,12 @@ import Navbar from "@/components/ui/Navbar";
 import PageTransitionOverlay from "@/components/ui/PageTransitionOverlay";
 import HeroSection from "@/components/sections/HeroSection";
 import TeamScrollAnimation from "@/components/TeamScrollAnimation";
-import TextHighlighted from "@/components/TextHighlighted";
-import ProcessSection from "@/components/ProcessSection";
+import ProductsSection from "@/components/ProductsSection";
 import BookInspectionSection from "@/components/BookInspectionSection";
-import ContactUsSection from "@/components/ContactUsSection";
 import AboutSection from "@/components/AboutSection";
-import PricingSection from "@/components/PricingSection";
+import ProcessSection from "@/components/ProcessSection";
 import ConsultationStrip from "@/components/ConsultationStrip";
+import ContactUsSection from "@/components/ContactUsSection";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
 
@@ -21,14 +20,13 @@ export default function Home() {
         <div id="hero">
           <HeroSection />
         </div>
-        <TextHighlighted />
         <TeamScrollAnimation />
+        <ProductsSection />
+        <BookInspectionSection />
         <AboutSection />
         <ProcessSection />
-        <BookInspectionSection />
-        <ContactUsSection />
-        <PricingSection />
         <ConsultationStrip />
+        <ContactUsSection />
         <FAQSection />
       </main>
       <Footer />

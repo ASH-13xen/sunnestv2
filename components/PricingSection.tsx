@@ -74,12 +74,12 @@ export default function PricingSection() {
 
   const pageBg     = isNight ? "#0c0f1a"                : "#FBF8F0";
   const pageText   = isNight ? "#f2f5ea"                : "#0A1628";
-  const pageText45 = isNight ? "rgba(242,245,234,0.45)" : "rgba(10,22,40,0.45)";
+  const pageText45 = isNight ? "rgba(242,245,234,0.62)" : "rgba(10,22,40,0.45)";
   const goldColor  = isNight ? "#60A5FA"                : "#D4A017";
   const goldBg     = isNight ? "#0c0f1a"                : "#0A1628";
   const cardBg     = isNight ? "#111115"                : "#ffffff";
   const cardBorder = isNight ? "rgba(255,255,255,0.08)" : "rgba(10,22,40,0.10)";
-  const cardText55 = isNight ? "rgba(242,245,234,0.55)" : "rgba(10,22,40,0.55)";
+  const cardText55 = isNight ? "rgba(242,245,234,0.68)" : "rgba(10,22,40,0.55)";
   const popularBg  = "linear-gradient(165deg, #0A1628 0%, #0c1322 100%)";
 
   const [yearly, setYearly] = useState(false);

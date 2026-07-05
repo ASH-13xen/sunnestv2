@@ -54,7 +54,7 @@ export default function ConsultationStrip() {
       </div>
 
       <a
-        href="#contact"
+        href="#book"
         style={{
           display: "inline-flex",
           alignItems: "center",

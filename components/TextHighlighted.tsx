@@ -167,12 +167,15 @@ export default function TextHighlighted() {
       st = ScrollTrigger.create({
         trigger: section,
         start: "top top",
-        end: () => `+=${section.offsetHeight * (isMobile() ? 0.9 : 1.2)}`,
+        // Mobile: fixed ~60vh scroll distance so the pin doesn't hold too long.
+        // Desktop: proportional to the section's actual height.
+        end: () =>
+          isMobile()
+            ? `+=${Math.min(window.innerHeight * 0.6, 480)}`
+            : `+=${section.offsetHeight * 1.2}`,
         scrub: 0.4,
         pin: true,
         anticipatePin: 1,
-        // transform-based pinning avoids position:fixed jank on iOS Safari
-        pinType: "transform",
         invalidateOnRefresh: true,
         onUpdate(self) {
           const p    = self.progress;

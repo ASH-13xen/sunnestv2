@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { motion } from "framer-motion";
 import { Sun, Clock, FileText, MessageSquare, Shield } from "lucide-react";
@@ -37,7 +37,7 @@ export default function BookInspectionSection() {
   const gold       = isNight ? "#60A5FA" : "#D4A017";
   const pageBg     = isNight ? "#0D111A" : "#FBF8F0";
   const pageText   = isNight ? "#f2f5ea" : "#0A1628";
-  const pageText55 = isNight ? "rgba(242,245,234,0.55)" : "rgba(10,22,40,0.55)";
+  const pageText55 = isNight ? "rgba(242,245,234,0.68)" : "rgba(10,22,40,0.55)";
   const cardBg     = isNight ? "rgba(16,20,32,0.92)" : "rgba(255,255,255,0.96)";
   const cardBorder = isNight ? "rgba(255,255,255,0.07)" : "rgba(212,160,23,0.18)";
   const inputBg    = isNight ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.85)";
@@ -51,6 +51,64 @@ export default function BookInspectionSection() {
   const [step, setStep]   = useState(1);
   const [form, setForm]   = useState<BookingForm>({ name: "", email: "", phone: "", address: "", notes: "" });
   const [submitted, setSubmitted] = useState(false);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+
+    const messageText = `Hello Sunnest! I would like to book a free solar inspection.
+
+Details:
+- Name: ${form.name}
+- Email: ${form.email}
+- Phone: ${form.phone}
+- Address: ${form.address}
+- Date: ${monthName} ${selectedDay}, ${currentYear}
+- Time: ${selectedTime}
+- Notes: ${form.notes || "N/A"}`;
+
+    const whatsappUrl = `https://wa.me/919109102662?text=${encodeURIComponent(messageText)}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  const sectionRef  = useRef<HTMLElement>(null);
+  const headerRef   = useRef<HTMLDivElement>(null);
+  const cardRef     = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let triggers: any[] = [];
+    let isMounted = true;
+
+    (async () => {
+      const { gsap } = await import("gsap");
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+      gsap.registerPlugin(ScrollTrigger);
+      if (!isMounted) return;
+
+      const reveal = (el: HTMLElement | null, fromY: number, delay: number) => {
+        if (!el) return;
+        gsap.set(el, { opacity: 0, y: fromY });
+        triggers.push(
+          ScrollTrigger.create({
+            trigger: el,
+            start: "top 85%",
+            invalidateOnRefresh: true,
+            once: true,
+            onEnter: () =>
+              gsap.to(el, { opacity: 1, y: 0, duration: 0.75, delay, ease: "power3.out" }),
+          })
+        );
+      };
+
+      reveal(headerRef.current, 32, 0);
+      reveal(cardRef.current, 40, 0.1);
+    })();
+
+    return () => {
+      isMounted = false;
+      triggers.forEach((t) => t.kill());
+    };
+  }, []);
 
   const monthName  = MONTH_NAMES[currentMonth];
   const daysInMonth = getDaysInMonth(currentYear, currentMonth);
@@ -104,6 +162,7 @@ export default function BookInspectionSection() {
 
   return (
     <section
+      ref={sectionRef}
       id="book"
       style={{
         background: pageBg, transition: "background 0.4s ease",
@@ -127,11 +186,8 @@ export default function BookInspectionSection() {
       }} />
 
       {/* ── Header ───────────────────────────────────────────────────────────── */}
-      <motion.div
-        initial={{ opacity: 0, y: 32 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.65 }}
+      <div
+        ref={headerRef}
         style={{ maxWidth: "1200px", margin: "0 auto 52px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}
       >
         <span style={{
@@ -152,15 +208,12 @@ export default function BookInspectionSection() {
         <p style={{ color: pageText55, fontSize: "0.92rem", maxWidth: "520px", lineHeight: 1.7, transition: "color 0.4s ease", margin: 0 }}>
           Our solar expert will visit your home, assess your roof, and design a custom system — completely free, with zero obligation.
         </p>
-      </motion.div>
+      </div>
 
       {/* ── Card ─────────────────────────────────────────────────────────────── */}
-      <motion.div
+      <div
+        ref={cardRef}
         className="book-card-outer"
-        initial={{ opacity: 0, y: 40 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-60px" }}
-        transition={{ duration: 0.7, delay: 0.1 }}
         style={{
           maxWidth: "1060px", margin: "0 auto",
           background: cardBg, backdropFilter: "blur(20px)",
@@ -273,7 +326,7 @@ export default function BookInspectionSection() {
                   border: "1px solid rgba(34,197,94,0.22)",
                   borderRadius: "12px", color: "#16A34A", fontWeight: 600, fontSize: "0.88rem",
                 }}>
-                  ✓ Our team will call you within 2 hours to confirm your appointment
+                  ✓ Our team will call you to confirm
                 </div>
               </motion.div>
             ) : (
@@ -423,7 +476,7 @@ export default function BookInspectionSection() {
 
                 {/* ── STEP 3: Personal details ── */}
                 {step === 3 && (
-                  <form onSubmit={e => { e.preventDefault(); setSubmitted(true); }}>
+                  <form onSubmit={handleFormSubmit}>
                     <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
                       <button type="button" onClick={() => setStep(2)} style={{ background: "none", border: "none", cursor: "pointer", color: gold, fontSize: "1.2rem", padding: "4px 8px", transition: "color 0.4s ease" }}>←</button>
                       <div>
@@ -481,7 +534,7 @@ export default function BookInspectionSection() {
             )}
           </div>
         </div>
-      </motion.div>
+      </div>
 
       <style>{`
         @media (max-width: 720px) {

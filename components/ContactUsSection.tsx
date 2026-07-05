@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
 import { motion } from "framer-motion";
-import { Phone, Mail, MapPin, MessageSquare } from "lucide-react";
+import { Phone, Mail, MapPin } from "lucide-react";
 
 // ─── Social icon SVGs ─────────────────────────────────────────────────────────
 function IconInstagram() {
@@ -22,13 +22,6 @@ function IconLinkedin() {
     </svg>
   );
 }
-function IconX() {
-  return (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.912-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-    </svg>
-  );
-}
 function IconFacebook() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
@@ -38,18 +31,19 @@ function IconFacebook() {
 }
 
 const SOCIALS = [
-  { label: "Instagram", icon: <IconInstagram /> },
-  { label: "LinkedIn",  icon: <IconLinkedin /> },
-  { label: "X",         icon: <IconX /> },
-  { label: "Facebook",  icon: <IconFacebook /> },
+  { label: "Instagram", icon: <IconInstagram />, href: "https://www.instagram.com/sunnestpower?igsh=MWNkYmcxcDg0bnBhcw%3D%3D&utm_source=qr" },
+  { label: "LinkedIn",  icon: <IconLinkedin />,  href: "https://www.linkedin.com/company/sunnest-power/" },
+  { label: "Facebook",  icon: <IconFacebook />,  href: "https://www.facebook.com/share/161aZ8ZhACb/?mibextid=wwXIfr" },
 ];
 
 const CONTACT_ITEMS = [
-  { Icon: Phone,        label: "Call Us",        value: "1-800-786-6378",       sub: "Mon–Sat, 9 AM–6 PM",     href: "tel:18007866378",              accent: "#D4A017" },
-  { Icon: Mail,         label: "Email Us",        value: "hello@sunnestpower.com",sub: "We reply within 2 hours",href: "mailto:hello@sunnestpower.com", accent: "#6366F1" },
-  { Icon: MapPin,       label: "Coverage",        value: "Pan India Operations",  sub: "Maharashtra focus",      href: null,                           accent: "#10B981" },
-  { Icon: MessageSquare,label: "Quick Booking",   value: "Book via our form",     sub: "Or call us directly",    href: "#book",                        accent: "#F59E0B" },
+  { Icon: Phone, label: "Call Us",  value: "+91-9109102662",         sub: "Mon–Sat, 9 AM–6 PM",      href: "tel:+919109102662",             accent: "#D4A017" },
+  { Icon: Mail,  label: "Email Us", value: "sales@sunnestpower.com", sub: "We reply within 2 hours", href: "mailto:sales@sunnestpower.com", accent: "#6366F1" },
 ];
+
+const OFFICE_ADDRESS = "A-09/10 Mahavir Gaushala Complex, Moudhapara Road, Raipur";
+const OFFICE_PHONE = "+91 79996 48310";
+const MAP_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(OFFICE_ADDRESS)}&output=embed`;
 
 type ContactForm = { name: string; email: string; phone: string; subject: string; message: string };
 
@@ -60,7 +54,7 @@ export default function ContactUsSection() {
   const gold       = isNight ? "#60A5FA" : "#D4A017";
   const pageBg     = isNight ? "#0c0f1a" : "#FBF8F0";
   const pageText   = isNight ? "#f2f5ea" : "#0A1628";
-  const pageText55 = isNight ? "rgba(242,245,234,0.55)" : "rgba(10,22,40,0.55)";
+  const pageText55 = isNight ? "rgba(242,245,234,0.68)" : "rgba(10,22,40,0.55)";
   const pageText30 = isNight ? "rgba(242,245,234,0.30)" : "rgba(10,22,40,0.30)";
   const cardBg     = isNight ? "rgba(17,21,35,0.80)" : "rgba(255,255,255,0.92)";
   const cardBorder = isNight ? "rgba(255,255,255,0.07)" : "rgba(10,22,40,0.09)";
@@ -69,6 +63,64 @@ export default function ContactUsSection() {
 
   const [form, setForm]       = useState<ContactForm>({ name: "", email: "", phone: "", subject: "", message: "" });
   const [submitted, setSubmitted] = useState(false);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitted(true);
+
+    const messageText = `Hello Sunnest! I have a general inquiry.
+
+Details:
+- Name: ${form.name}
+- Email: ${form.email}
+- Phone: ${form.phone || "N/A"}
+- Subject: ${form.subject || "N/A"}
+- Message: ${form.message}`;
+
+    const whatsappUrl = `https://wa.me/919109102662?text=${encodeURIComponent(messageText)}`;
+    window.open(whatsappUrl, "_blank");
+  };
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const headerRef  = useRef<HTMLDivElement>(null);
+  const leftColRef = useRef<HTMLDivElement>(null);
+  const formColRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let triggers: any[] = [];
+    let isMounted = true;
+
+    (async () => {
+      const { gsap } = await import("gsap");
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+      gsap.registerPlugin(ScrollTrigger);
+      if (!isMounted) return;
+
+      const reveal = (el: HTMLElement | null, fromX: number, delay: number) => {
+        if (!el) return;
+        gsap.set(el, { opacity: 0, x: fromX, y: fromX === 0 ? 32 : 0 });
+        triggers.push(
+          ScrollTrigger.create({
+            trigger: el,
+            start: "top 85%",
+            invalidateOnRefresh: true,
+            once: true,
+            onEnter: () =>
+              gsap.to(el, { opacity: 1, x: 0, y: 0, duration: 0.75, delay, ease: "power3.out" }),
+          })
+        );
+      };
+
+      reveal(headerRef.current, 0, 0);
+      reveal(leftColRef.current, -32, 0.1);
+      reveal(formColRef.current, 32, 0.15);
+    })();
+
+    return () => {
+      isMounted = false;
+      triggers.forEach((t) => t.kill());
+    };
+  }, []);
 
   const inputStyle: React.CSSProperties = {
     width: "100%", padding: "11px 14px", boxSizing: "border-box",
@@ -80,6 +132,7 @@ export default function ContactUsSection() {
 
   return (
     <section
+      ref={sectionRef}
       id="contact"
       style={{
         background: pageBg, transition: "background 0.4s ease",
@@ -98,11 +151,8 @@ export default function ContactUsSection() {
         className="contact-outer-grid"
       >
         {/* Top label + heading */}
-        <motion.div
-          initial={{ opacity: 0, y: 32 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.65 }}
+        <div
+          ref={headerRef}
           style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", maxWidth: "1200px", margin: "0 auto" }}
         >
           <span style={{
@@ -126,19 +176,17 @@ export default function ContactUsSection() {
           }}>
             Have questions about solar? Our engineers are ready to answer anything — from system sizing to subsidies. We typically respond within 2 hours.
           </p>
-        </motion.div>
+        </div>
 
         {/* ── Two-column body: left = info, right = form ────────────────────── */}
-        <div className="contact-body-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.65fr", gap: "clamp(28px,5vw,56px)", alignItems: "flex-start" }}>
+        <div className="contact-body-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1.65fr", gap: "clamp(28px,5vw,56px)", alignItems: "stretch" }}>
 
           {/* ── Left: contact cards + social ──────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, x: -32 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.65, delay: 0.1 }}
+          <div
+            ref={leftColRef}
+            style={{ display: "flex", flexDirection: "column", height: "100%" }}
           >
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginBottom: "16px", flexShrink: 0 }}>
               {CONTACT_ITEMS.map(({ Icon, label, value, sub, href, accent }) => (
                 <div
                   key={label}
@@ -185,20 +233,62 @@ export default function ContactUsSection() {
               ))}
             </div>
 
-            {/* Social links panel */}
+            {/* Visit Us panel — map + address + social links */}
             <div style={{
-              padding: "22px",
+              padding: "18px",
               background: "linear-gradient(135deg, #0A1628 0%, #0E2040 100%)",
               borderRadius: "18px",
+              display: "flex",
+              flexDirection: "column",
+              flex: 1,
+              minHeight: 0,
             }}>
-              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "14px" }}>
-                Follow Us
+              <div style={{
+                width: "100%", minHeight: "170px", flex: 1, borderRadius: "12px",
+                overflow: "hidden", marginBottom: "16px",
+                border: "1px solid rgba(255,255,255,0.10)",
+              }}>
+                <iframe
+                  src={MAP_EMBED_SRC}
+                  title="SunNest Power office location"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0, display: "block", filter: "grayscale(0.15) contrast(1.05)" }}
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
               </div>
+
+              <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
+                <MapPin style={{ width: "16px", height: "16px", color: gold, flexShrink: 0, marginTop: "2px" }} />
+                <span style={{ color: "rgba(255,255,255,0.68)", fontSize: "0.8rem", lineHeight: 1.5 }}>
+                  {OFFICE_ADDRESS}
+                </span>
+              </div>
+              <a
+                href={`tel:${OFFICE_PHONE.replace(/\s+/g, "")}`}
+                style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px", textDecoration: "none" }}
+                onMouseEnter={e => {
+                  const span = e.currentTarget.querySelector("span");
+                  if (span) span.style.color = gold;
+                }}
+                onMouseLeave={e => {
+                  const span = e.currentTarget.querySelector("span");
+                  if (span) span.style.color = "rgba(255,255,255,0.68)";
+                }}
+              >
+                <Phone style={{ width: "16px", height: "16px", color: gold, flexShrink: 0 }} />
+                <span style={{ color: "rgba(255,255,255,0.68)", fontSize: "0.8rem", transition: "color 0.2s ease" }}>
+                  {OFFICE_PHONE}
+                </span>
+              </a>
+
               <div style={{ display: "flex", gap: "10px" }}>
                 {SOCIALS.map(s => (
                   <a
                     key={s.label}
-                    href="#"
+                    href={s.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     aria-label={s.label}
                     style={{
                       width: "36px", height: "36px", borderRadius: "9px",
@@ -225,14 +315,11 @@ export default function ContactUsSection() {
                 ))}
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* ── Right: form card ──────────────────────────────────────────── */}
-          <motion.div
-            initial={{ opacity: 0, x: 32 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.65, delay: 0.15 }}
+          <div
+            ref={formColRef}
             style={{
               background: cardBg, backdropFilter: "blur(20px)",
               border: `1px solid ${cardBorder}`,
@@ -258,7 +345,7 @@ export default function ContactUsSection() {
                 </p>
               </motion.div>
             ) : (
-              <form onSubmit={e => { e.preventDefault(); setSubmitted(true); }}>
+              <form onSubmit={handleFormSubmit}>
                 <h3 style={{ fontFamily: "var(--font-playfair)", fontSize: "1.35rem", fontWeight: 700, color: pageText, marginBottom: "28px", transition: "color 0.4s ease" }}>
                   Send Us a Message
                 </h3>
@@ -338,7 +425,7 @@ export default function ContactUsSection() {
                 </button>
               </form>
             )}
-          </motion.div>
+          </div>
         </div>
       </div>
 

@@ -10,12 +10,7 @@ const DIFFERENTIATORS = [
   "End-to-end support: design, install & lifetime service",
 ];
 
-const STATS = [
-  { val: "3-5 Yrs", label: "Average ROI Period" },
-  { val: "100%", label: "In-House Engineers" },
-  { val: "25 Yrs", label: "Panel Warranty" },
-  { val: "Pan-India", label: "Operations & Support" },
-];
+
 
 export default function AboutSection() {
   const { theme } = useTheme();
@@ -24,7 +19,7 @@ export default function AboutSection() {
   // Alternating background colors for contrast transition
   const pageBg     = isNight ? "#0D111A"                : "#F7F3E9";
   const pageText   = isNight ? "#f2f5ea"                : "#0A1628";
-  const pageText45 = isNight ? "rgba(242,245,234,0.45)" : "rgba(10,22,40,0.50)";
+  const pageText45 = isNight ? "rgba(242,245,234,0.62)" : "rgba(10,22,40,0.50)";
   const goldColor  = isNight ? "#60A5FA"                : "#D4A017";
   const cardBg     = isNight ? "rgba(255,255,255,0.03)" : "rgba(10,22,40,0.03)";
   const cardBorder = isNight ? "rgba(255,255,255,0.06)" : "rgba(10,22,40,0.08)";
@@ -127,29 +122,7 @@ export default function AboutSection() {
               ))}
             </div>
 
-            {/* Interactive Stats Grid */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "16px", width: "100%", maxWidth: "600px" }} className="sm:grid-cols-4">
-              {STATS.map((s) => (
-                <div
-                  key={s.label}
-                  style={{
-                    background: cardBg,
-                    border: `1px solid ${cardBorder}`,
-                    padding: "16px 14px",
-                    borderRadius: "16px",
-                    textAlign: "center",
-                    transition: "all 0.3s ease",
-                  }}
-                >
-                  <div style={{ fontSize: "1.4rem", fontWeight: 900, color: goldColor, lineHeight: 1.1, marginBottom: "4px" }}>
-                    {s.val}
-                  </div>
-                  <div style={{ fontSize: "0.68rem", fontWeight: 700, color: pageText45, textTransform: "uppercase", letterSpacing: "0.02em" }}>
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
+
           </div>
         </div>
 

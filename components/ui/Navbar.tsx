@@ -9,11 +9,12 @@ import { motion, AnimatePresence } from "framer-motion";
 const NAV_LINKS = [
   { label: "Home",      href: "#hero" },
   { label: "Solutions", href: "#solutions" },
+  { label: "Products",  href: "#products" },
+  { label: "Book",      href: "#book" },
   { label: "About",     href: "#about" },
   { label: "Process",   href: "#process" },
-  { label: "Pricing",   href: "#pricing" },
-  { label: "FAQ",       href: "#faq" },
   { label: "Contact",   href: "#contact" },
+  { label: "FAQ",       href: "#faq" },
 ];
 
 export default function Navbar() {
@@ -31,6 +32,18 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Lock scroll when mobile menu drawer is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isOpen]);
 
   const handleNavClick = (href: string) => {
     setIsOpen(false);
@@ -163,7 +176,7 @@ export default function Navbar() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 bg-navy-900/96 backdrop-blur-md z-50 flex flex-col items-center justify-center gap-4 px-8"
+            className="fixed inset-0 bg-navy-900/96 backdrop-blur-md z-50 flex flex-col items-center justify-start gap-2 px-8 pt-24 pb-8 overflow-y-auto"
           >
             {NAV_LINKS.map((link, i) => (
               <motion.button
@@ -172,7 +185,7 @@ export default function Navbar() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
                 onClick={() => handleNavClick(link.href)}
-                className="w-full max-w-xs text-center text-xl font-black text-white/85 hover:text-white py-3 px-6 rounded-2xl hover:bg-white/5 transition-all duration-200 cursor-pointer border border-transparent hover:border-white/10"
+                className="w-full max-w-xs text-center text-lg font-bold text-white/80 hover:text-white py-2 px-6 rounded-xl hover:bg-white/5 transition-all duration-200 cursor-pointer border border-transparent hover:border-white/10"
               >
                 {link.label}
               </motion.button>

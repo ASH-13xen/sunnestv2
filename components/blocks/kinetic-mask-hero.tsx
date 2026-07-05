@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
+import { useTheme } from "@/context/ThemeContext";
 
 // ─── Kinetic Mask Config Variables ──────────────────────────────────────────
 // You can adjust these variables directly to fine-tune the zoom animation:
@@ -15,6 +16,13 @@ const REVERSE_DURATION = 0.85; // Duration in seconds when zooming out in single
 // --- Scroll Cushion/Hold Configuration ---
 const SCROLL_HOLD_BUFFER = 0.5; // Extra manual scroll depth (0.0 to 1.0+) the user must scroll through while the video stays fully zoomed before unlocking the page (e.g. 0.35, 0.5)
 const AUTO_ZOOM_HOLD_DELAY = 600; // Delay in milliseconds after auto-zoom finishes before scroll is unlocked (e.g. 300, 600)
+
+// --- Hero Background Tint Configuration (Control overlay opacity and colors here) ---
+const NIGHT_OVERLAY_COLOR = "#0A1628";
+const NIGHT_OVERLAY_OPACITY = 0.90; // Opacity overlay for dark mode
+
+const DAY_OVERLAY_COLOR = "#0A1628"; // Opacity overlay color for light mode (dark tint)
+const DAY_OVERLAY_OPACITY = 0.65;    // Opacity overlay for light mode (slightly lesser dark tint)
 // ──────────────────────────────────────────────────────────────────────────
 
 interface KineticMaskHeroProps {
@@ -34,9 +42,20 @@ export default function KineticMaskHero({
   onExpansionChange,
   onProgressChange,
 }: KineticMaskHeroProps) {
+  const { theme } = useTheme();
+  const isNight = theme === "night";
+
+  const pageBg = isNight ? "#0A1628" : "#FBF8F0";
+  const pageText = isNight ? "#FBF8F0" : "#0A1628";
+  const goldColor = isNight ? "#60A5FA" : "#D4A017";
+  const paraText = isNight ? "rgba(255, 255, 255, 0.65)" : "rgba(10, 22, 40, 0.68)";
+
+  const imageFilter = isNight ? "url(#aerial-filter)" : "none";
+  const overlayColor = isNight ? NIGHT_OVERLAY_COLOR : DAY_OVERLAY_COLOR;
+  const overlayOpacity = isNight ? NIGHT_OVERLAY_OPACITY : DAY_OVERLAY_OPACITY;
+
   const progressVal = useMotionValue(0);
   const [mediaFullyExpanded, setMediaFullyExpanded] = useState(false);
-  const [touchStartY, setTouchStartY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -72,32 +91,42 @@ export default function KineticMaskHero({
     vid.defaultMuted = true;
     vid.muted = true;
 
-    if (isActive) {
-      if (mediaFullyExpanded) {
-        vid.play().catch((err) => {
-          console.warn("Video playback was prevented:", err);
+    if (!isActive) {
+      vid.pause();
+      return;
+    }
+
+    // Prime the video initially so the first frame is loaded/cached
+    if (vid.paused && vid.currentTime === 0) {
+      vid
+        .play()
+        .then(() => {
+          vid.pause();
+        })
+        .catch((err) => {
+          console.warn("Priming video play failed:", err);
         });
+    }
+
+    const unsubscribe = progressVal.on("change", (latest) => {
+      if (latest > 0.85) {
+        if (vid.paused) {
+          vid.play().catch((err) => {
+            // Ignore auto-play block issues
+          });
+        }
       } else {
-        // Prime the video on iOS Safari/Chrome to force frame decoding while keeping it paused
-        if (vid.paused && vid.currentTime === 0) {
-          vid
-            .play()
-            .then(() => {
-              // Pause immediately after play resolves to capture first frame
-              vid.pause();
-            })
-            .catch((err) => {
-              console.warn("Priming video play failed:", err);
-            });
-        } else {
+        if (!vid.paused) {
           vid.pause();
           vid.currentTime = 0;
         }
       }
-    } else {
-      vid.pause();
-    }
-  }, [isActive, mediaFullyExpanded]);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [isActive, progressVal]);
 
   // Copy video frames into the canvas on every animation frame.
   // Using a canvas inside foreignObject instead of a raw <video> element
@@ -139,6 +168,9 @@ export default function KineticMaskHero({
     return () => cancelAnimationFrame(rafId);
   }, []);
   const autoZoomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Refs keep event-handler closures stable — no re-registration on state change.
+  const mediaFullyExpandedRef = useRef(false);
+  const touchStartYRef = useRef(0);
 
   useEffect(() => {
     onExpansionChangeRef.current = onExpansionChange;
@@ -154,11 +186,7 @@ export default function KineticMaskHero({
       onProgressChangeRef.current?.(Math.min(latest, 1.0));
     };
 
-    if ((progressVal as any).on) {
-      return (progressVal as any).on("change", handler);
-    } else {
-      return progressVal.onChange(handler);
-    }
+    return progressVal.on("change", handler);
   }, [progressVal]);
 
   // Cleanup timeouts on unmount
@@ -168,83 +196,70 @@ export default function KineticMaskHero({
     };
   }, []);
 
-  // Scroll and touch triggers
+  // Scroll and touch triggers.
+  // All handlers use refs for state so the effect only needs to re-run when
+  // isActive changes — no stale-closure re-registration on every state tick.
   useEffect(() => {
     if (!isActive) return;
 
+    // Local helper keeps the ref and React state in sync atomically.
+    const setExpanded = (val: boolean) => {
+      mediaFullyExpandedRef.current = val;
+      setMediaFullyExpanded(val);
+    };
+
+    // ── Desktop wheel ─────────────────────────────────────────────────────────
     const handleWheel = (e: WheelEvent) => {
+      const expanded = mediaFullyExpandedRef.current;
+
       if (AUTO_ZOOM_TRIGGER) {
-        // --- 1. SINGLE-SCROLL TRIGGER MODE ---
-        if (
-          e.deltaY > 0 &&
-          !mediaFullyExpanded &&
-          targetProgress.current !== 1
-        ) {
+        if (e.deltaY > 0 && !expanded && targetProgress.current !== 1) {
           e.preventDefault();
           targetProgress.current = 1;
           isAnimating.current = true;
-          if (autoZoomTimeoutRef.current)
-            clearTimeout(autoZoomTimeoutRef.current);
-
+          if (autoZoomTimeoutRef.current) clearTimeout(autoZoomTimeoutRef.current);
           animate(progressVal, 1, {
             duration: AUTO_ZOOM_DURATION,
-            ease: [0.16, 1, 0.3, 1], // Ultra-smooth easeOutExpo
+            ease: [0.16, 1, 0.3, 1],
             onComplete: () => {
-              // Wait an extra cushion delay before unlocking the grid scrolling
               autoZoomTimeoutRef.current = setTimeout(() => {
-                setMediaFullyExpanded(true);
+                setExpanded(true);
                 onExpansionChangeRef.current?.(true);
                 isAnimating.current = false;
               }, AUTO_ZOOM_HOLD_DELAY);
             },
           });
-        } else if (
-          e.deltaY < 0 &&
-          mediaFullyExpanded &&
-          targetProgress.current !== 0 &&
-          window.scrollY <= 5
-        ) {
+        } else if (e.deltaY < 0 && expanded && targetProgress.current !== 0 && window.scrollY <= 5) {
           e.preventDefault();
           targetProgress.current = 0;
           isAnimating.current = true;
-          setMediaFullyExpanded(false);
+          setExpanded(false);
           onExpansionChangeRef.current?.(false);
           animate(progressVal, 0, {
             duration: REVERSE_DURATION,
             ease: [0.16, 1, 0.3, 1],
-            onComplete: () => {
-              isAnimating.current = false;
-            },
+            onComplete: () => { isAnimating.current = false; },
           });
         } else if (isAnimating.current) {
           e.preventDefault();
         }
       } else {
-        // --- 2. DIRECT SCROLL-LINKED MODE (WITH SCROLL BUFFER) ---
         const maxProgressLimit = 1.0 + SCROLL_HOLD_BUFFER;
-
-        if (mediaFullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
-          setMediaFullyExpanded(false);
+        if (expanded && e.deltaY < 0 && window.scrollY <= 5) {
+          setExpanded(false);
           onExpansionChangeRef.current?.(false);
-          targetProgress.current = 1.0; // Reset progress back to the visual boundary
+          targetProgress.current = 1.0;
           e.preventDefault();
           animate(progressVal, 1.0, { duration: 0.1, ease: "linear" });
-        } else if (!mediaFullyExpanded) {
+        } else if (!expanded) {
           e.preventDefault();
-          const current = progressVal.get();
-
-          // Allow progress to go beyond 1.0 up to maxProgressLimit to create a scroll pause
           const newProgress = Math.min(
-            Math.max(current + e.deltaY * SCROLL_SENSITIVITY, 0),
+            Math.max(progressVal.get() + e.deltaY * SCROLL_SENSITIVITY, 0),
             maxProgressLimit,
           );
-
-          // Smoothly animate to the new progress step to avoid wheel tick stutters
           animate(progressVal, newProgress, { duration: 0.15, ease: "linear" });
-
-          // Only unlock bento grid scroll when user has scrolled past the full hold buffer
           if (newProgress >= maxProgressLimit) {
-            setMediaFullyExpanded(true);
+            setExpanded(true);
             onExpansionChangeRef.current?.(true);
             targetProgress.current = maxProgressLimit;
           }
@@ -252,76 +267,99 @@ export default function KineticMaskHero({
       }
     };
 
-    const handleTouchStart = (e: TouchEvent) =>
-      setTouchStartY(e.touches[0].clientY);
+    // ── Proportional touch zoom ───────────────────────────────────────────────
+    // Swipe distance directly drives progress (45% screen height = full zoom).
+    // On release, snap forward if progress > 35%, snap back otherwise.
+    // This lets the user see the whole animation at their own pace instead of
+    // a 20px flick firing an uncontrollable auto-zoom.
+    const SWIPE_FULL_PX  = window.innerHeight * 0.45;
+    const SWIPE_DEAD_PX  = 12;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      touchStartYRef.current = e.touches[0].clientY;
+    };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!touchStartY) return;
-      const deltaY = touchStartY - e.touches[0].clientY;
+      const startY   = touchStartYRef.current;
+      if (!startY) return;
+      const expanded = mediaFullyExpandedRef.current;
+      const deltaY   = startY - e.touches[0].clientY;
 
-      // Touch always uses single-swipe trigger regardless of AUTO_ZOOM_TRIGGER —
-      // one decisive swipe starts the cinematic zoom, not many small increments.
-      if (deltaY > 20 && !mediaFullyExpanded && targetProgress.current !== 1) {
+      if (!expanded && deltaY > SWIPE_DEAD_PX) {
         e.preventDefault();
-        targetProgress.current = 1;
-        isAnimating.current = true;
-        if (autoZoomTimeoutRef.current) clearTimeout(autoZoomTimeoutRef.current);
-
-        animate(progressVal, 1, {
-          duration: AUTO_ZOOM_DURATION,
-          ease: [0.16, 1, 0.3, 1],
-          onComplete: () => {
-            autoZoomTimeoutRef.current = setTimeout(() => {
-              setMediaFullyExpanded(true);
-              onExpansionChangeRef.current?.(true);
-              isAnimating.current = false;
-            }, AUTO_ZOOM_HOLD_DELAY);
-          },
-        });
-      } else if (deltaY < -20 && mediaFullyExpanded && targetProgress.current !== 0 && window.scrollY <= 5) {
+        const progress = Math.min((deltaY - SWIPE_DEAD_PX) / SWIPE_FULL_PX, 1.0);
+        progressVal.set(progress);
+        targetProgress.current = progress;
+      } else if (expanded && window.scrollY <= 5 && deltaY < -SWIPE_DEAD_PX) {
         e.preventDefault();
-        targetProgress.current = 0;
-        isAnimating.current = true;
-        setMediaFullyExpanded(false);
-        onExpansionChangeRef.current?.(false);
-        animate(progressVal, 0, {
-          duration: REVERSE_DURATION,
-          ease: [0.16, 1, 0.3, 1],
-          onComplete: () => { isAnimating.current = false; },
-        });
-      } else if (isAnimating.current) {
-        e.preventDefault();
+        // Map swipe-up distance back to reverse progress (1 → 0)
+        const swipeDist       = Math.max(deltaY + SWIPE_DEAD_PX, -SWIPE_FULL_PX);
+        const reverseProgress = 1.0 + swipeDist / SWIPE_FULL_PX;
+        progressVal.set(Math.max(reverseProgress, 0));
+        targetProgress.current = reverseProgress;
       }
     };
 
+    const handleTouchEnd = () => {
+      const current  = progressVal.get();
+      const expanded = mediaFullyExpandedRef.current;
+
+      if (!expanded) {
+        if (current > 0.35) {
+          // Snap to full zoom
+          targetProgress.current = 1;
+          isAnimating.current    = true;
+          animate(progressVal, 1, {
+            duration: 0.7,
+            ease: [0.16, 1, 0.3, 1],
+            onComplete: () => {
+              autoZoomTimeoutRef.current = setTimeout(() => {
+                setExpanded(true);
+                onExpansionChangeRef.current?.(true);
+                isAnimating.current = false;
+              }, AUTO_ZOOM_HOLD_DELAY);
+            },
+          });
+        } else {
+          // Snap back to start
+          targetProgress.current = 0;
+          animate(progressVal, 0, { duration: 0.45, ease: [0.16, 1, 0.3, 1] });
+        }
+      } else if (current < 0.5) {
+        // Swiped back far enough — reverse the zoom
+        setExpanded(false);
+        onExpansionChangeRef.current?.(false);
+        targetProgress.current = 0;
+        animate(progressVal, 0, { duration: REVERSE_DURATION, ease: [0.16, 1, 0.3, 1] });
+      }
+
+      touchStartYRef.current = 0;
+    };
+
+    // ── Nav-click handler ─────────────────────────────────────────────────────
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (!target.closest("nav")) return;
 
-      // Logo: reset the hero to start
       const logoSpan = target.closest("span");
       if (logoSpan && (logoSpan.textContent?.includes("Sun") || logoSpan.textContent?.includes("Nest"))) {
-        setMediaFullyExpanded(false);
+        setExpanded(false);
         onExpansionChangeRef.current?.(false);
         progressVal.set(0);
         targetProgress.current = 0;
         return;
       }
 
-      // Only expand to full screen for nav-link button clicks (inside <ul>).
-      // Theme toggle and hamburger live in a sibling <div>, not in <ul>,
-      // so they are intentionally excluded here.
       if (!target.closest("ul")) return;
 
-      setMediaFullyExpanded(true);
+      setExpanded(true);
       onExpansionChangeRef.current?.(true);
       progressVal.set(1.0 + SCROLL_HOLD_BUFFER);
       targetProgress.current = 1.0 + SCROLL_HOLD_BUFFER;
     };
 
-    const handleTouchEnd = () => setTouchStartY(0);
     const handleScroll = () => {
-      if (!mediaFullyExpanded) window.scrollTo(0, 0);
+      if (!mediaFullyExpandedRef.current) window.scrollTo(0, 0);
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
@@ -339,7 +377,7 @@ export default function KineticMaskHero({
       window.removeEventListener("touchend", handleTouchEnd);
       document.removeEventListener("click", handleGlobalClick);
     };
-  }, [mediaFullyExpanded, touchStartY, isActive, progressVal]);
+  }, [isActive]);
 
   // Map progressVal directly to styling transforms via useTransform
   // Scale is capped at 85x to avoid vector path rasterization lag in browsers
@@ -364,9 +402,9 @@ export default function KineticMaskHero({
   const transformOrigin = isMobile ? "450px 430px" : "430px 470px";
 
   return (
-    <div className="relative w-full h-[100dvh] overflow-hidden bg-[#0A1628]">
+    <div className="relative w-full h-[100dvh] overflow-hidden" style={{ backgroundColor: pageBg, transition: "background-color 0.4s ease" }}>
       {/* Dark backdrop */}
-      <div className="absolute inset-0 z-0 bg-[#0A1628]" />
+      <div className="absolute inset-0 z-0" style={{ backgroundColor: pageBg, transition: "background-color 0.4s ease" }} />
 
       {/* Video source — kept nearly-invisible in the HTML tree so iOS decodes
           frames for canvas.drawImage() without the foreignObject GPU-layer bug. */}
@@ -473,9 +511,9 @@ export default function KineticMaskHero({
         {/* ── Cover layer: dark navy + aerial image, hole-punched at text positions.
             This is native SVG — masks on SVG elements work correctly on iOS. ── */}
         <g mask="url(#cover-mask)">
-          {/* Base dark navy background */}
-          <rect width="1000" height="1000" fill="#0A1628" />
-          {/* Aerial image (grayscale+dark via SVG filter), fades as zoom progresses */}
+          {/* Base background */}
+          <rect width="1000" height="1000" fill={pageBg} style={{ transition: "fill 0.4s ease" }} />
+          {/* Aerial image (grayscale+dark via SVG filter in dark mode, raw image in light mode), fades as zoom progresses */}
           <motion.image
             href={bgImageSrc}
             x="0"
@@ -483,11 +521,11 @@ export default function KineticMaskHero({
             width="1000"
             height="1000"
             preserveAspectRatio="xMidYMid slice"
-            filter="url(#aerial-filter)"
+            filter={imageFilter}
             style={{ opacity: bgOpacity }}
           />
-          {/* Luxury blue duotone overlay */}
-          <rect width="1000" height="1000" fill="#0A1628" opacity="0.90" />
+          {/* Luxury duotone overlay (controlled by config variables) */}
+          <rect width="1000" height="1000" fill={overlayColor} opacity={overlayOpacity} style={{ transition: "fill 0.4s ease, opacity 0.4s ease" }} />
         </g>
 
         {/* ── Liquid Gold Outline (desktop only — gold stroke bleeds visually on mobile) ── */}
@@ -526,15 +564,21 @@ export default function KineticMaskHero({
 
       {/* Scroll hint (fades out as we zoom) */}
       <motion.div
-        className="absolute inset-x-0 top-[58%] lg:top-auto lg:bottom-12 z-40 flex flex-col items-center justify-center gap-3 pointer-events-none text-center px-6"
+        className="absolute inset-x-0 top-[70%] z-40 flex flex-col items-center justify-center gap-3 pointer-events-none text-center px-6"
         style={{ opacity: contentOpacity }}
       >
-        <p className="max-w-md text-xs md:text-sm font-medium text-white/65 leading-relaxed">
+        <p
+          className="max-w-xl text-sm md:text-base font-medium leading-relaxed"
+          style={{ color: "rgba(255, 255, 255, 0.75)" }}
+        >
           High-yield solar power systems engineered for residential autonomy and
           commercial savings. We design, permit, and commission lifetime clean
           energy infrastructure across India.
         </p>
-        <span className="text-xs font-serif italic text-yellow-400 tracking-widest opacity-80">
+        <span
+          className="text-xs font-serif italic tracking-widest opacity-80"
+          style={{ color: "#FFE57F" }}
+        >
           Scroll to enter the grid
         </span>
       </motion.div>
