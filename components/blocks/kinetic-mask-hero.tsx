@@ -276,10 +276,17 @@ export default function KineticMaskHero({
     const SWIPE_DEAD_PX  = 12;
 
     const handleTouchStart = (e: TouchEvent) => {
+      // Ignore new touches while a commit/reverse animation is in flight —
+      // otherwise a second swipe during that ~1.3s window (very common on
+      // mobile, since people keep swiping) can hijack progressVal and,
+      // depending on where it lands, undo the zoom that's already committing.
+      // That's what caused the "zooms in then comes back" repeating bug.
+      if (isAnimating.current) return;
       touchStartYRef.current = e.touches[0].clientY;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
+      if (isAnimating.current) return;
       const startY   = touchStartYRef.current;
       if (!startY) return;
       const expanded = mediaFullyExpandedRef.current;
@@ -308,6 +315,7 @@ export default function KineticMaskHero({
     };
 
     const handleTouchEnd = () => {
+      if (isAnimating.current) return;
       const current  = progressVal.get();
       const expanded = mediaFullyExpandedRef.current;
 
@@ -330,14 +338,24 @@ export default function KineticMaskHero({
         } else {
           // Snap back to start
           targetProgress.current = 0;
-          animate(progressVal, 0, { duration: 0.45, ease: [0.16, 1, 0.3, 1] });
+          isAnimating.current = true;
+          animate(progressVal, 0, {
+            duration: 0.45,
+            ease: [0.16, 1, 0.3, 1],
+            onComplete: () => { isAnimating.current = false; },
+          });
         }
       } else if (current < 0.5) {
         // Swiped back far enough — reverse the zoom
         setExpanded(false);
         onExpansionChangeRef.current?.(false);
         targetProgress.current = 0;
-        animate(progressVal, 0, { duration: REVERSE_DURATION, ease: [0.16, 1, 0.3, 1] });
+        isAnimating.current = true;
+        animate(progressVal, 0, {
+          duration: REVERSE_DURATION,
+          ease: [0.16, 1, 0.3, 1],
+          onComplete: () => { isAnimating.current = false; },
+        });
       }
 
       touchStartYRef.current = 0;
