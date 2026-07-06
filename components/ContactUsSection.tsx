@@ -243,20 +243,49 @@ Details:
               flex: 1,
               minHeight: 0,
             }}>
-              <div style={{
-                width: "100%", minHeight: "170px", flex: 1, borderRadius: "12px",
-                overflow: "hidden", marginBottom: "16px",
-                border: "1px solid rgba(255,255,255,0.10)",
-              }}>
+              <a
+                href={`https://www.google.com/maps?q=${encodeURIComponent(OFFICE_ADDRESS)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  position: "relative",
+                  display: "block",
+                  width: "100%", minHeight: "170px", flex: 1, borderRadius: "12px",
+                  overflow: "hidden", marginBottom: "16px",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                }}
+              >
+                {/* The embed itself never receives touch/pointer input — an
+                    interactive Google Maps iframe otherwise captures the first
+                    touch and drags the map instead of scrolling the page,
+                    which is what made scrolling near this section feel buggy
+                    on mobile. Tapping anywhere opens the real map instead. */}
                 <iframe
                   src={MAP_EMBED_SRC}
                   title="SunNest Power office location"
                   width="100%"
                   height="100%"
-                  style={{ border: 0, display: "block", filter: "grayscale(0.15) contrast(1.05)" }}
+                  style={{
+                    border: 0, display: "block",
+                    filter: "grayscale(0.15) contrast(1.05)",
+                    pointerEvents: "none",
+                  }}
                   referrerPolicy="no-referrer-when-downgrade"
+                  tabIndex={-1}
                 />
-              </div>
+                <span
+                  style={{
+                    position: "absolute", top: "10px", right: "10px",
+                    display: "flex", alignItems: "center", gap: "5px",
+                    fontSize: "0.68rem", fontWeight: 700, color: "#fff",
+                    background: "rgba(10,22,40,0.72)", backdropFilter: "blur(4px)",
+                    padding: "5px 10px", borderRadius: "999px",
+                    border: "1px solid rgba(255,255,255,0.15)",
+                  }}
+                >
+                  Open in Maps ↗
+                </span>
+              </a>
 
               <div style={{ display: "flex", gap: "10px", marginBottom: "12px" }}>
                 <MapPin style={{ width: "16px", height: "16px", color: gold, flexShrink: 0, marginTop: "2px" }} />
