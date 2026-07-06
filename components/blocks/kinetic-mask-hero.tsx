@@ -208,6 +208,17 @@ export default function KineticMaskHero({
       setMediaFullyExpanded(val);
     };
 
+    // Users who've asked the OS for reduced motion don't get the scroll-jack
+    // zoom at all — jump straight to the final state and let the page behave
+    // like a normal, unlocked page from the first frame.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      progressVal.set(1);
+      targetProgress.current = 1;
+      setExpanded(true);
+      onExpansionChangeRef.current?.(true);
+      return;
+    }
+
     // ── Desktop wheel ─────────────────────────────────────────────────────────
     const handleWheel = (e: WheelEvent) => {
       const expanded = mediaFullyExpandedRef.current;
@@ -384,7 +395,19 @@ export default function KineticMaskHero({
     };
 
     const handleScroll = () => {
-      if (!mediaFullyExpandedRef.current) window.scrollTo(0, 0);
+      if (mediaFullyExpandedRef.current) return;
+      // Wheel and touch are both fully intercepted (preventDefault) above, so
+      // the only way a native scroll ever reaches here while unexpanded is
+      // scrollbar-drag, keyboard (Space/PageDown/Arrow/Home/End), or focus
+      // moving into view (Tab navigation) — i.e. exactly the input methods a
+      // mouse-only scroll-jack locks out. Snapping back to 0 would trap
+      // keyboard, scrollbar, and screen-reader users on the hero with no way
+      // to reach the rest of the site, so instead treat any such scroll as
+      // "skip the intro" and unlock immediately rather than fighting it.
+      progressVal.set(1);
+      targetProgress.current = 1;
+      setExpanded(true);
+      onExpansionChangeRef.current?.(true);
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
@@ -456,6 +479,8 @@ export default function KineticMaskHero({
         playsInline
         disablePictureInPicture
         disableRemotePlayback
+        tabIndex={-1}
+        aria-hidden="true"
         style={{
           position: "absolute",
           opacity: 0.01,
@@ -472,12 +497,14 @@ export default function KineticMaskHero({
           never extracts plain HTML canvas onto a separate GPU layer. */}
       <canvas
         ref={canvasRef}
+        aria-hidden="true"
         className="absolute inset-0 z-[10]"
         style={{ display: "block", width: "100%", height: "100%" }}
       />
 
       {/* Kinetic SVG overlay */}
       <svg
+        aria-hidden="true"
         className="absolute inset-0 z-20 w-full h-full pointer-events-none select-none"
         viewBox="0 0 1000 1000"
         preserveAspectRatio="xMidYMid slice"

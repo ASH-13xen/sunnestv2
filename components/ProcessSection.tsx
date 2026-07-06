@@ -220,9 +220,14 @@ export default function ProcessSection() {
   }, []);
 
   return (
+    // Nav-anchor lives on this outer, non-pinned wrapper rather than the
+    // GSAP-pinned <section> itself — scrollIntoView() on a pinned element
+    // (GSAP wraps it in a pin-spacer and repositions it) lands at the wrong
+    // scroll offset, which is why "Process" in the navbar used to undershoot
+    // into whatever section came before it.
+    <div id="process">
     <section
       ref={sectionRef}
-      id="process"
       style={{
         background:     "#06080D",
         minHeight:      "100vh",
@@ -562,5 +567,6 @@ export default function ProcessSection() {
         })}
       </div>
     </section>
+    </div>
   );
 }

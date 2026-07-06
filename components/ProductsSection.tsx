@@ -245,6 +245,7 @@ export default function ProductsSection() {
 
   return (
     <div
+      id="products"
       style={{
         position: "relative",
         width: "100%",
@@ -302,7 +303,6 @@ export default function ProductsSection() {
       {/* Pinned section container */}
       <div
         ref={sectionRef}
-        id="products"
         style={{
           position: "relative",
           width: "100%",
