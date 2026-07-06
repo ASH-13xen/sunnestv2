@@ -301,7 +301,7 @@ export default function Footer() {
           }}
         >
           <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.25)", margin: 0 }}>
-            © 2026 SunNest Power Pvt. Ltd. All rights reserved.
+            © 2026 SunNest Power LLP. All rights reserved.
           </p>
           <div style={{ display: "flex", gap: "24px" }}>
             {["Terms & Conditions", "Privacy Policy"].map((label) => (
