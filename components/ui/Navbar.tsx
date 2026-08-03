@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { cn } from "@/lib/utils";
 import { Sun, Moon } from "lucide-react";
@@ -73,17 +74,35 @@ export default function Navbar() {
             : "bg-transparent"
         )}
       >
-        {/* ── Logo ──────────────────────────────────────────────────────── */}
+        {/* ── Logo ──────────────────────────────────────────────────────────
+            The outer element must stay a `<span>` containing the literal text
+            "Sun"/"Nest": kinetic-mask-hero's global click handler identifies
+            the logo via `target.closest("span")` + textContent, and uses that
+            to rewind the hero zoom. Swapping the wordmark out for the image
+            alone would silently break that. The emblem sits beside the text,
+            not in place of it. */}
         <span
-          className="text-xl font-black tracking-tight select-none z-[60] cursor-pointer"
+          className="inline-flex items-center gap-2.5 text-xl font-black tracking-tight select-none z-[60] cursor-pointer"
           onClick={() => handleNavClick("#hero")}
         >
-          <span className={cn("transition-colors duration-300", lightText ? "text-white" : "text-navy-900")}>
-            Sun
-          </span>
-          <span className="text-[#FFD700]">Nest</span>
-          <span className={cn("text-sm font-medium ml-1 transition-colors duration-300", lightText ? "text-white/60" : "text-text-mid")}>
-            Power
+          <Image
+            src="/logo-tile.webp"
+            alt=""
+            width={96}
+            height={96}
+            loading="eager"
+            aria-hidden="true"
+            className="w-8 h-8 md:w-9 md:h-9 shrink-0"
+            style={{ filter: "drop-shadow(0 2px 10px rgba(212,160,23,0.28))" }}
+          />
+          <span>
+            <span className={cn("transition-colors duration-300", lightText ? "text-white" : "text-navy-900")}>
+              Sun
+            </span>
+            <span className="text-[#FFD700]">Nest</span>
+            <span className={cn("text-sm font-medium ml-1 transition-colors duration-300", lightText ? "text-white/60" : "text-text-mid")}>
+              Power
+            </span>
           </span>
         </span>
 

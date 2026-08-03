@@ -1,7 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
-import { Sun, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 const QUICK_LINKS = [
@@ -89,21 +90,19 @@ export default function Footer() {
             onClick={() => scrollTo("#hero")}
             style={{ display: "flex", alignItems: "center", gap: "10px", background: "none", border: "none", padding: 0, cursor: "pointer", marginBottom: "20px" }}
           >
-            <div
+            <Image
+              src="/logo-tile.webp"
+              alt=""
+              width={96}
+              height={96}
+              aria-hidden="true"
               style={{
                 width: "34px",
                 height: "34px",
-                borderRadius: "10px",
-                background: `linear-gradient(135deg, ${gold}, #FF9100)`,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                boxShadow: `0 0 20px ${gold}40`,
                 flexShrink: 0,
+                filter: "drop-shadow(0 2px 12px rgba(212,160,23,0.28))",
               }}
-            >
-              <Sun style={{ width: "18px", height: "18px", color: "#0A1628" }} />
-            </div>
+            />
             <span style={{ fontSize: "1.1rem", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.02em", lineHeight: 1 }}>
               Sun<span style={{ color: gold }}>Nest</span>
               <span style={{ fontSize: "0.75rem", fontWeight: 500, color: "rgba(255,255,255,0.5)", marginLeft: "4px" }}>Power</span>
