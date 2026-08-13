@@ -377,8 +377,10 @@ export default function KineticMaskHero({
       const target = e.target as HTMLElement;
       if (!target.closest("nav")) return;
 
-      const logoSpan = target.closest("span");
-      if (logoSpan && (logoSpan.textContent?.includes("Sun") || logoSpan.textContent?.includes("Nest"))) {
+      // Matched by attribute, not by text: the navbar logo is now a single
+      // image whose wordmark is baked into the artwork, so there is no "Sun"
+      // or "Nest" text node left to sniff for.
+      if (target.closest("[data-nav-logo]")) {
         setExpanded(false);
         onExpansionChangeRef.current?.(false);
         progressVal.set(0);

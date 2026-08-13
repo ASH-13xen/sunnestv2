@@ -69,6 +69,21 @@ export default function RootLayout({
       className={`${plusJakarta.variable} ${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} antialiased`}
     >
       <head>
+        {/* Runs before first paint so the page never flashes the light palette
+            on its way to dark. globals.css puts the day palette on bare :root
+            and the night palette behind [data-theme="night"], so without this
+            the document would paint cream until ThemeProvider's effect lands
+            after hydration. Default here must match DEFAULT_THEME in
+            context/ThemeContext.tsx. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('sunnest-theme');" +
+              "document.documentElement.setAttribute('data-theme'," +
+              "t==='day'||t==='night'?t:'night');}" +
+              "catch(e){document.documentElement.setAttribute('data-theme','night');}",
+          }}
+        />
         <link rel="preload" href="/hero-bg.mp4" as="video" type="video/mp4" />
         {/* Structured data: tells Google which image is the company logo, and
             that this is a Raipur business. Escaping `<` guards against HTML

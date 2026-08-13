@@ -13,13 +13,18 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | null>(null);
 
+// Dark is the default for a first-time visitor. Kept in sync with the
+// pre-paint script in app/layout.tsx — if you change it here, change it there
+// too, or the CSS variables and the React state will disagree on first render.
+const DEFAULT_THEME: Theme = "night";
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("day");
+  const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
   const [isWiping, setIsWiping] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("sunnest-theme") as Theme;
-    const initial = saved === "day" || saved === "night" ? saved : "day";
+    const initial = saved === "day" || saved === "night" ? saved : DEFAULT_THEME;
     setTheme(initial);
     document.documentElement.setAttribute("data-theme", initial);
   }, []);

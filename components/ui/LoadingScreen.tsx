@@ -30,46 +30,26 @@ export default function LoadingScreen() {
           transition={{ duration: 0.65, ease: "easeInOut" }}
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#0A1628]"
         >
-          {/* Warm halo behind the emblem — the logo's own glow is baked in at
-              low alpha, so this gives it something to bloom against. Sized in
-              px against the mark rather than vmin, so it stays a halo instead
-              of washing across the whole viewport on wide screens. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-65 w-65 -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255,202,40,0.16) 0%, rgba(255,145,0,0.06) 45%, transparent 70%)",
-            }}
-          />
-
+          {/* The lockup artwork already contains the wordmark and tagline, so
+              nothing is captioned underneath it. Preloaded: this is the site's
+              first paint, and therefore the LCP element. */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.92 }}
+            initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="relative"
           >
-            {/* Slow breathe, so the mark itself carries the "working" feel
-                rather than just sitting there. */}
             <motion.div
-              animate={{ scale: [1, 1.07, 1] }}
+              animate={{ scale: [1, 1.06, 1] }}
               transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              className="w-20 sm:w-24"
             >
-              {/* Emblem from the dedicated brand/sunnest-emblem.png export —
-                  no sunburst, no wordmark, so nothing is clipped at any size.
-                  Narrower than the old sunburst crop because the mark now fills
-                  its own frame instead of sitting inside a ring of rays.
-                  Preloaded: this is the site's first paint, so it is the LCP
-                  element. */}
               <Image
-                src="/logo-emblem.webp"
+                src="/logo-lockup.webp"
                 alt="SunNest Power"
-                width={512}
-                height={490}
+                width={900}
+                height={819}
                 preload
-                sizes="96px"
-                className="h-auto w-full"
+                sizes="150px"
+                className="w-[150px] h-auto"
               />
             </motion.div>
           </motion.div>

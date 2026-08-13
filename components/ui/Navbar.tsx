@@ -8,21 +8,21 @@ import { Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NAV_LINKS = [
-  { label: "Home",      href: "#hero" },
+  { label: "Home", href: "#hero" },
   { label: "Solutions", href: "#solutions" },
-  { label: "Products",  href: "#products" },
-  { label: "Book",      href: "#book" },
-  { label: "About",     href: "#about" },
-  { label: "Process",   href: "#process" },
-  { label: "Contact",   href: "#contact" },
-  { label: "FAQ",       href: "#faq" },
+  { label: "Products", href: "#products" },
+  { label: "Book", href: "#book" },
+  { label: "About", href: "#about" },
+  { label: "Process", href: "#process" },
+  { label: "Contact", href: "#contact" },
+  { label: "FAQ", href: "#faq" },
 ];
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
-  const [isOpen, setIsOpen]     = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [onHero, setOnHero]     = useState(true);
+  const [onHero, setOnHero] = useState(true);
 
   useEffect(() => {
     const onScroll = () => {
@@ -48,7 +48,9 @@ export default function Navbar() {
 
   const handleNavClick = (href: string) => {
     setIsOpen(false);
-    window.dispatchEvent(new CustomEvent("page-transition", { detail: { href } }));
+    window.dispatchEvent(
+      new CustomEvent("page-transition", { detail: { href } }),
+    );
   };
 
   // When the drawer is open or we're on the dark hero, always use light text
@@ -71,39 +73,30 @@ export default function Navbar() {
             ? theme === "night"
               ? "bg-navy-900/90 backdrop-blur-md border-b border-white/5 shadow-lg"
               : "bg-bg-cream/90 backdrop-blur-md border-b border-gold-500/10 shadow-md"
-            : "bg-transparent"
+            : "bg-transparent",
         )}
       >
         {/* ── Logo ──────────────────────────────────────────────────────────
-            The outer element must stay a `<span>` containing the literal text
-            "Sun"/"Nest": kinetic-mask-hero's global click handler identifies
-            the logo via `target.closest("span")` + textContent, and uses that
-            to rewind the hero zoom. Swapping the wordmark out for the image
-            alone would silently break that. The emblem sits beside the text,
-            not in place of it. */}
+            The full lockup image carries the wordmark itself, so there is no
+            text node beside it. `data-nav-logo` is load-bearing:
+            kinetic-mask-hero's global click handler uses it to recognise a
+            logo click and rewind the hero zoom. It used to sniff for the
+            literal text "Sun"/"Nest", which stopped working the moment the
+            wordmark became part of the image. */}
         <span
-          className="inline-flex items-center gap-2.5 text-xl font-black tracking-tight select-none z-[60] cursor-pointer"
+          data-nav-logo
+          className="inline-flex items-center select-none z-[60] cursor-pointer"
           onClick={() => handleNavClick("#hero")}
         >
           <Image
-            src="/logo-tile.webp"
-            alt=""
-            width={96}
-            height={96}
+            src="/logo-lockup.webp"
+            alt="SunNest Power"
+            width={900}
+            height={819}
             loading="eager"
-            aria-hidden="true"
-            className="w-8 h-8 md:w-9 md:h-9 shrink-0"
-            style={{ filter: "drop-shadow(0 2px 10px rgba(212,160,23,0.28))" }}
+            sizes="40px"
+            className="h-8 w-auto md:h-15 shrink-0"
           />
-          <span>
-            <span className={cn("transition-colors duration-300", lightText ? "text-white" : "text-navy-900")}>
-              Sun
-            </span>
-            <span className="text-[#FFD700]">Nest</span>
-            <span className={cn("text-sm font-medium ml-1 transition-colors duration-300", lightText ? "text-white/60" : "text-text-mid")}>
-              Power
-            </span>
-          </span>
         </span>
 
         {/* ── Desktop links ───────────────────────────────────────────────── */}
@@ -116,7 +109,7 @@ export default function Navbar() {
                   "px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer",
                   lightText
                     ? "text-white/80 hover:text-white hover:bg-white/10"
-                    : "text-text-mid hover:text-text-dark hover:bg-gold-500/10"
+                    : "text-text-mid hover:text-text-dark hover:bg-gold-500/10",
                 )}
               >
                 {link.label}
@@ -129,15 +122,20 @@ export default function Navbar() {
           {/* ── Theme toggle ───────────────────────────────────────────────── */}
           {/* Same button style as sunlatest; isWiping guard prevents double-fire */}
           <button
-            onClick={(e) => { e.stopPropagation(); toggleTheme(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleTheme();
+            }}
             aria-label="Toggle theme"
             className={cn(
               "w-8 h-8 rounded-full flex items-center justify-center cursor-pointer transition-all duration-300 border shadow-md z-[60]",
               lightText
                 ? "bg-white/10 border-white/15 hover:bg-white/20 text-[#60A5FA]"
-                : "bg-gold-500/10 border-gold-500/20 hover:bg-gold-500/20 text-gold-500"
+                : "bg-gold-500/10 border-gold-500/20 hover:bg-gold-500/20 text-gold-500",
             )}
-            title={theme === "day" ? "Switch to Night Mode" : "Switch to Day Mode"}
+            title={
+              theme === "day" ? "Switch to Night Mode" : "Switch to Day Mode"
+            }
           >
             {/* Animated Sun ↔ Moon swap — rotate in from above, out below */}
             <AnimatePresence mode="wait" initial={false}>
@@ -145,8 +143,8 @@ export default function Navbar() {
                 <motion.span
                   key="sun"
                   initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
-                  animate={{ rotate: 0,   opacity: 1, scale: 1   }}
-                  exit={{    rotate:  90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.22, ease: "easeInOut" }}
                   className="flex items-center justify-center"
                 >
@@ -155,9 +153,9 @@ export default function Navbar() {
               ) : (
                 <motion.span
                   key="moon"
-                  initial={{ rotate:  90, opacity: 0, scale: 0.5 }}
-                  animate={{ rotate: 0,   opacity: 1, scale: 1   }}
-                  exit={{    rotate: -90, opacity: 0, scale: 0.5 }}
+                  initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                  animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                  exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
                   transition={{ duration: 0.22, ease: "easeInOut" }}
                   className="flex items-center justify-center"
                 >
@@ -175,23 +173,32 @@ export default function Navbar() {
               "md:hidden w-8 h-8 rounded-full border flex flex-col items-center justify-center gap-[5px] cursor-pointer z-[60] transition-all duration-300 shadow-md",
               lightText
                 ? "bg-white/10 border-white/15 hover:bg-white/20"
-                : "bg-navy-900/5 border-navy-900/10 hover:bg-navy-900/10"
+                : "bg-navy-900/5 border-navy-900/10 hover:bg-navy-900/10",
             )}
           >
             <motion.span
               animate={{ rotate: isOpen ? 45 : 0, y: isOpen ? 5.5 : 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className={cn("w-4 h-0.5 block rounded-full transition-colors duration-300", lightText ? "bg-white" : "bg-text-dark")}
+              className={cn(
+                "w-4 h-0.5 block rounded-full transition-colors duration-300",
+                lightText ? "bg-white" : "bg-text-dark",
+              )}
             />
             <motion.span
               animate={{ opacity: isOpen ? 0 : 1, scaleX: isOpen ? 0 : 1 }}
               transition={{ duration: 0.2 }}
-              className={cn("w-4 h-0.5 block rounded-full transition-colors duration-300", lightText ? "bg-white" : "bg-text-dark")}
+              className={cn(
+                "w-4 h-0.5 block rounded-full transition-colors duration-300",
+                lightText ? "bg-white" : "bg-text-dark",
+              )}
             />
             <motion.span
               animate={{ rotate: isOpen ? -45 : 0, y: isOpen ? -5.5 : 0 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className={cn("w-4 h-0.5 block rounded-full transition-colors duration-300", lightText ? "bg-white" : "bg-text-dark")}
+              className={cn(
+                "w-4 h-0.5 block rounded-full transition-colors duration-300",
+                lightText ? "bg-white" : "bg-text-dark",
+              )}
             />
           </button>
         </div>
