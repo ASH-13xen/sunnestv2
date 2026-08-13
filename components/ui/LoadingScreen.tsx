@@ -45,17 +45,17 @@ export default function LoadingScreen() {
             initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-[min(74vw,360px)]"
+            className="relative w-[min(68vw,420px)]"
           >
-            {/* Preloaded rather than lazy: this is the first paint of the site,
-                so it is the LCP element. */}
+            {/* Emblem only — no wordmark. Preloaded rather than lazy: this is
+                the first paint of the site, so it is the LCP element. */}
             <Image
-              src="/logo-lockup.webp"
-              alt="SunNest Power — Turning Sunlight Into Savings"
-              width={900}
-              height={819}
+              src="/logo-emblem.webp"
+              alt="SunNest Power"
+              width={800}
+              height={613}
               preload
-              sizes="(max-width: 500px) 74vw, 360px"
+              sizes="(max-width: 500px) 68vw, 420px"
               className="h-auto w-full"
             />
           </motion.div>

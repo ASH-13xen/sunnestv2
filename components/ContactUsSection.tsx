@@ -42,7 +42,7 @@ const CONTACT_ITEMS = [
 ];
 
 const OFFICE_ADDRESS = "A-09/10 Mahavir Gaushala Complex, Moudhapara Road, Raipur";
-const OFFICE_PHONE = "+91 79996 48310";
+const OFFICE_PHONE = "+91-9109102662";
 const MAP_EMBED_SRC = `https://www.google.com/maps?q=${encodeURIComponent(OFFICE_ADDRESS)}&output=embed`;
 
 type ContactForm = { name: string; email: string; phone: string; subject: string; message: string };
@@ -294,7 +294,7 @@ Details:
                 </span>
               </div>
               <a
-                href={`tel:${OFFICE_PHONE.replace(/\s+/g, "")}`}
+                href={`tel:${OFFICE_PHONE.replace(/[^\d+]/g, "")}`}
                 style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "18px", textDecoration: "none" }}
                 onMouseEnter={e => {
                   const span = e.currentTarget.querySelector("span");

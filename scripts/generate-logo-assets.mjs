@@ -23,6 +23,13 @@ const APP = path.join(ROOT, 'app');
 // ── Measured against brand/sunnest-logo.png (3375 x 4219) ───────────────────
 // Full lockup: first content row (the rays) through the last row of the tagline.
 const LOCKUP = { left: 32, top: 712, width: 3307, height: 3009 };
+// Emblem only — no wordmark. Fitting a circle through the topmost, leftmost and
+// rightmost ray tips puts the sunburst's centre at (1687, 1996) with radius
+// 1275, so the burst spans x 412..2962. The bottom is cut at 2675 because the
+// "SunNest" S-swash starts intruding at y=2680 (at x=223) — one row group
+// lower and gold letter-tops bleed into the frame. The burst's lower rays are
+// genuinely truncated in the source art, which is how the logo already reads.
+const EMBLEM = { left: 412, top: 721, width: 2551, height: 1954 };
 // The gold "S" + solar-panel sphere. The bbox of saturated gold/blue — which
 // excludes the pale-yellow rays — is x 918..2426, y 1204..2656. Squared and
 // centred on that, with the bottom pinned to 2696: the "SunNest" wordmark's
@@ -62,13 +69,18 @@ for (let y = TAGLINE_FROM; y < H; y++) {
 }
 const base = () => sharp(data, { raw: { width: W, height: H, channels: C } });
 
-// ── 2. Full lockup — loading screen ─────────────────────────────────────────
+// ── 2. Full lockup — Open Graph card + schema.org logo ──────────────────────
 // WebP rather than PNG: photographic gold gradients over alpha cost ~950 KB as
 // PNG and a fraction of that as WebP with no visible loss.
 const lockupBuf = await base().extract(LOCKUP).png().toBuffer();
 const lockupFile = path.join(PUB, 'logo-lockup.webp');
 await sharp(lockupBuf).resize({ width: 900 }).webp({ quality: 90, effort: 6 }).toFile(lockupFile);
 await report('lockup', lockupFile);
+
+// Emblem without the wordmark — loading screen.
+const emblemFile = path.join(PUB, 'logo-emblem.webp');
+await base().extract(EMBLEM).resize({ width: 800 }).webp({ quality: 90, effort: 6 }).toFile(emblemFile);
+await report('emblem', emblemFile);
 
 // ── 3. Navy tile — navbar, footer, favicon, app icon ────────────────────────
 // The emblem's glow is opaque right up to the crop edge, so a bare transparent
@@ -129,7 +141,21 @@ const appleFile = path.join(APP, 'apple-icon.png');
 fs.writeFileSync(appleFile, await tile(180, 0, { opaque: true }));
 await report('apple touch icon', appleFile);
 
-// ── 4. favicon.ico — 16/32/48 PNG-in-ICO ────────────────────────────────────
+// ── 4. Square logo for schema.org Organization.logo ─────────────────────────
+// Google reads this for the logo rich result / knowledge panel. It is flattened
+// onto navy rather than left transparent because the recoloured tagline is a
+// pale gold that would wash out on a white surface.
+const schemaFile = path.join(PUB, 'logo-schema.png');
+await sharp({ create: { width: 512, height: 512, channels: 4, background: { ...NAVY, alpha: 1 } } })
+  .composite([
+    { input: await sharp(lockupBuf).resize({ width: 430, height: 430, fit: 'inside' }).png().toBuffer(), gravity: 'centre' },
+  ])
+  .flatten({ background: NAVY })
+  .png({ compressionLevel: 9 })
+  .toFile(schemaFile);
+await report('schema.org logo', schemaFile);
+
+// ── 5. favicon.ico — 16/32/48 PNG-in-ICO ────────────────────────────────────
 const icoSizes = [16, 32, 48];
 const icoPngs = await Promise.all(
   icoSizes.map((s) => sharp(icon512).resize({ width: s, height: s }).png({ compressionLevel: 9 }).toBuffer())
@@ -157,7 +183,7 @@ rows.push(
     .padStart(7)} KB  app/favicon.ico`
 );
 
-// ── 5. Open Graph / Twitter card ────────────────────────────────────────────
+// ── 6. Open Graph / Twitter card ────────────────────────────────────────────
 const OG_W = 1200;
 const OG_H = 630;
 const heroPath = path.join(PUB, 'images/hero-bg.png');
