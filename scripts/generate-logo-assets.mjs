@@ -17,19 +17,22 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SRC = path.join(ROOT, 'brand/sunnest-logo.png');
+// Separate emblem-only export: just the S and solar panel, no sunburst, no
+// wordmark, clean alpha. The full lockup can't produce this by cropping — its
+// sunburst is painted behind the wordmark, so an emblem cut from it is clipped
+// along the bottom.
+const EMBLEM_SRC = path.join(ROOT, 'brand/sunnest-emblem.png');
 const PUB = path.join(ROOT, 'public');
 const APP = path.join(ROOT, 'app');
 
 // ── Measured against brand/sunnest-logo.png (3375 x 4219) ───────────────────
 // Full lockup: first content row (the rays) through the last row of the tagline.
 const LOCKUP = { left: 32, top: 712, width: 3307, height: 3009 };
-// Emblem only — no wordmark. Fitting a circle through the topmost, leftmost and
-// rightmost ray tips puts the sunburst's centre at (1687, 1996) with radius
-// 1275, so the burst spans x 412..2962. The bottom is cut at 2675 because the
-// "SunNest" S-swash starts intruding at y=2680 (at x=223) — one row group
-// lower and gold letter-tops bleed into the frame. The burst's lower rays are
-// genuinely truncated in the source art, which is how the logo already reads.
-const EMBLEM = { left: 412, top: 721, width: 2551, height: 1954 };
+// Measured against brand/sunnest-emblem.png (1951 x 2048), which is mostly
+// empty canvas — the artwork's alpha bbox is only 764 x 730 at (591, 563).
+// Trimmed to that, plus an 8px transparent margin so antialiased edges aren't
+// clipped by downstream resizes.
+const EMBLEM = { left: 583, top: 555, width: 780, height: 746 };
 // The gold "S" + solar-panel sphere. The bbox of saturated gold/blue — which
 // excludes the pale-yellow rays — is x 918..2426, y 1204..2656. Squared and
 // centred on that, with the bottom pinned to 2696: the "SunNest" wordmark's
@@ -77,9 +80,13 @@ const lockupFile = path.join(PUB, 'logo-lockup.webp');
 await sharp(lockupBuf).resize({ width: 900 }).webp({ quality: 90, effort: 6 }).toFile(lockupFile);
 await report('lockup', lockupFile);
 
-// Emblem without the wordmark — loading screen.
+// Emblem — loading screen. 512px is ~4x the largest size it renders at.
 const emblemFile = path.join(PUB, 'logo-emblem.webp');
-await base().extract(EMBLEM).resize({ width: 800 }).webp({ quality: 90, effort: 6 }).toFile(emblemFile);
+await sharp(EMBLEM_SRC)
+  .extract(EMBLEM)
+  .resize({ width: 512 })
+  .webp({ quality: 92, effort: 6 })
+  .toFile(emblemFile);
 await report('emblem', emblemFile);
 
 // ── 3. Navy tile — navbar, footer, favicon, app icon ────────────────────────

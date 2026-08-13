@@ -31,38 +31,52 @@ export default function LoadingScreen() {
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#0A1628]"
         >
           {/* Warm halo behind the emblem — the logo's own glow is baked in at
-              low alpha, so this gives it something to bloom against. */}
+              low alpha, so this gives it something to bloom against. Sized in
+              px against the mark rather than vmin, so it stays a halo instead
+              of washing across the whole viewport on wide screens. */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[76vmin] w-[76vmin] -translate-x-1/2 -translate-y-1/2 rounded-full"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-65 w-65 -translate-x-1/2 -translate-y-1/2 rounded-full"
             style={{
               background:
-                "radial-gradient(circle, rgba(255,202,40,0.14) 0%, rgba(255,145,0,0.05) 45%, transparent 70%)",
+                "radial-gradient(circle, rgba(255,202,40,0.16) 0%, rgba(255,145,0,0.06) 45%, transparent 70%)",
             }}
           />
 
           <motion.div
-            initial={{ opacity: 0, scale: 0.94 }}
+            initial={{ opacity: 0, scale: 0.92 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-[min(68vw,420px)]"
+            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
           >
-            {/* Emblem only — no wordmark. Preloaded rather than lazy: this is
-                the first paint of the site, so it is the LCP element. */}
-            <Image
-              src="/logo-emblem.webp"
-              alt="SunNest Power"
-              width={800}
-              height={613}
-              preload
-              sizes="(max-width: 500px) 68vw, 420px"
-              className="h-auto w-full"
-            />
+            {/* Slow breathe, so the mark itself carries the "working" feel
+                rather than just sitting there. */}
+            <motion.div
+              animate={{ scale: [1, 1.07, 1] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+              className="w-20 sm:w-24"
+            >
+              {/* Emblem from the dedicated brand/sunnest-emblem.png export —
+                  no sunburst, no wordmark, so nothing is clipped at any size.
+                  Narrower than the old sunburst crop because the mark now fills
+                  its own frame instead of sitting inside a ring of rays.
+                  Preloaded: this is the site's first paint, so it is the LCP
+                  element. */}
+              <Image
+                src="/logo-emblem.webp"
+                alt="SunNest Power"
+                width={512}
+                height={490}
+                preload
+                sizes="96px"
+                className="h-auto w-full"
+              />
+            </motion.div>
           </motion.div>
 
           {/* Indeterminate sweep — gold is hardcoded rather than themed because
               this screen is always navy, in both day and night mode. */}
-          <div className="relative mt-9 h-px w-[min(54vw,210px)] overflow-hidden bg-white/10">
+          <div className="relative mt-7 h-px w-33 overflow-hidden bg-white/10">
             <motion.div
               className="absolute inset-y-0 w-1/3"
               style={{
