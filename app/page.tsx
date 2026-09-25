@@ -10,6 +10,7 @@ import ConsultationStrip from "@/components/ConsultationStrip";
 import ContactUsSection from "@/components/ContactUsSection";
 import FAQSection from "@/components/FAQSection";
 import Footer from "@/components/Footer";
+import ScrollDebug from "@/components/ui/ScrollDebug";
 
 export default function Home() {
   return (
@@ -30,6 +31,7 @@ export default function Home() {
         <FAQSection />
       </main>
       <Footer />
+      <ScrollDebug />
     </>
   );
 }

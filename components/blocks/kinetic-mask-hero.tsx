@@ -117,10 +117,6 @@ export default function KineticMaskHero({
 
     video.defaultMuted = true;
     video.muted = true;
-    video.src =
-      mobileMediaSrc && (isTouchDevice() || window.innerWidth < 1024)
-        ? mobileMediaSrc
-        : mediaSrc;
 
     let poster: HTMLImageElement | null = null;
     let visible = true;
@@ -207,16 +203,33 @@ export default function KineticMaskHero({
     video.addEventListener("loadeddata", drawFrame);
     video.addEventListener("seeked", drawFrame);
 
-    // iOS won't decode a first frame for canvas until the video has played
-    // once, so prime it with a muted play → pause.
-    video
-      .play()
-      .then(() => {
-        if (progressVal.get() <= VIDEO_PLAY_AT) video.pause();
-      })
-      .catch(() => {});
+    // The video only starts downloading once the page has fired `load`.
+    // A loading <video> holds back the window `load` event until its first
+    // frame arrives, and `load` is when ScrollTrigger re-measures the page —
+    // a re-measure briefly jumps to the top and restores the position. On a
+    // phone connection that landed while the user was already flicking past
+    // the hero, and iOS dropped the restore, snapping the page back to the
+    // top. The poster covers the canvas until the video has data.
+    const startVideo = () => {
+      video.src =
+        mobileMediaSrc && (isTouchDevice() || window.innerWidth < 1024)
+          ? mobileMediaSrc
+          : mediaSrc;
+      // iOS won't decode a first frame for canvas until the video has played
+      // once, so prime it with a muted play → pause (unless the zoom has
+      // already finished and it should keep playing).
+      video
+        .play()
+        .then(() => {
+          if (progressVal.get() <= VIDEO_PLAY_AT) video.pause();
+        })
+        .catch(() => {});
+    };
+    if (document.readyState === "complete") startVideo();
+    else window.addEventListener("load", startVideo, { once: true });
 
     return () => {
+      window.removeEventListener("load", startVideo);
       stopLoop();
       ro.disconnect();
       io.disconnect();
@@ -279,6 +292,7 @@ export default function KineticMaskHero({
         window.removeEventListener("touchend", handleTouchEnd);
         window.removeEventListener("touchcancel", handleTouchEnd);
         window.removeEventListener("scroll", handleScroll);
+        window.dispatchEvent(new Event("sunnest:hero-unlocked")); // for ScrollDebug
       };
 
       const commit = () => {

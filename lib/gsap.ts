@@ -4,7 +4,7 @@
 // own, and nothing ever re-measured trigger positions once images and web
 // fonts finished loading — so start/end offsets (and pin spacing) were
 // computed against a half-loaded page. Here the plugin is registered once and
-// a single refresh runs after `load` and after fonts are ready.
+// a refresh runs once web fonts are ready (ScrollTrigger handles `load`).
 //
 // Awaiting the same promise also resolves callers in the order they asked,
 // which is document order for sibling sections — ScrollTrigger needs pins
@@ -38,8 +38,11 @@ export function loadGsap(): Promise<GsapModules> {
         });
       };
 
+      // ScrollTrigger already re-measures on window `load` by itself; web
+      // fonts are the one late layout change it doesn't know about. (Each
+      // extra refresh is another chance for the brief jump-to-top a refresh
+      // does on iOS, so don't add more than needed.)
       if (document.readyState === "complete") refreshSoon();
-      else window.addEventListener("load", refreshSoon, { once: true });
       document.fonts?.ready.then(refreshSoon).catch(() => {});
 
       return { gsap, ScrollTrigger };
