@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTheme } from "@/context/ThemeContext";
+import { loadGsap } from "@/lib/gsap";
 import { motion } from "framer-motion";
 import { Sun, Clock, FileText, MessageSquare, Shield } from "lucide-react";
 
@@ -80,9 +81,7 @@ Details:
     let isMounted = true;
 
     (async () => {
-      const { gsap } = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      gsap.registerPlugin(ScrollTrigger);
+      const { gsap, ScrollTrigger } = await loadGsap();
       if (!isMounted) return;
 
       const reveal = (el: HTMLElement | null, fromY: number, delay: number) => {

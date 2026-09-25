@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
+import { loadGsap, isDesktopWidth, onLayoutChange } from "@/lib/gsap";
 import { Home, Building2, Landmark, Factory, Check } from "lucide-react";
 
 // ── Data ─────────────────────────────────────────────────────────────────────
@@ -71,11 +73,11 @@ export default function TeamScrollAnimation() {
     let st1: any     = null;
     let st2: any     = null;
     let stMob: any[] = [];
+    let isMounted    = true;
 
     async function init() {
-      const { gsap }          = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      gsap.registerPlugin(ScrollTrigger);
+      const { gsap, ScrollTrigger } = await loadGsap();
+      if (!isMounted) return;
 
       st1?.kill();
       st2?.kill();
@@ -87,7 +89,7 @@ export default function TeamScrollAnimation() {
       // ════════════════════════════════════════════════════════════════════════
       // DESKTOP (≥ 1000 px)
       // ════════════════════════════════════════════════════════════════════════
-      if (window.innerWidth >= 1000) {
+      if (isDesktopWidth()) {
         const section  = sectionRef.current;
         const members  = membersRef.current.filter(Boolean)  as HTMLDivElement[];
         const initials = initialsRef.current.filter(Boolean) as HTMLSpanElement[];
@@ -136,7 +138,7 @@ export default function TeamScrollAnimation() {
         st2 = ScrollTrigger.create({
           trigger: section,
           start:   "top top",
-          end:     `+=${window.innerHeight * 4}`,
+          end:     () => `+=${window.innerHeight * 4}`,
           scrub:   1,
           pin:     true,
           anticipatePin: 1,
@@ -203,16 +205,18 @@ export default function TeamScrollAnimation() {
 
     init();
 
-    let resizeTimer: ReturnType<typeof setTimeout>;
-    const onResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(init, 250);
-    };
-    window.addEventListener("resize", onResize);
+    // Rebuild only when switching between the desktop and mobile layouts.
+    // Mobile toolbars resize the viewport height on almost every scroll; the
+    // old resize listener re-ran init() on those, which threw every mobile
+    // card back off-screen and slid it in again mid-scroll.
+    const stopLayoutWatch = onLayoutChange(async () => {
+      await init();
+      (await loadGsap()).ScrollTrigger.refresh();
+    });
 
     return () => {
-      window.removeEventListener("resize", onResize);
-      clearTimeout(resizeTimer);
+      isMounted = false;
+      stopLayoutWatch();
       st1?.kill();
       st2?.kill();
       stMob.forEach((s) => s?.kill());
@@ -309,10 +313,12 @@ export default function TeamScrollAnimation() {
 
                   {/* Image portion */}
                   <div className="relative w-full h-[38%] overflow-hidden shrink-0">
-                    <img
+                    <Image
                       src={sol.image}
-                      alt={sol.title}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
+                      alt={sol.title.replace(/\s+/g, " ")}
+                      fill
+                      sizes="25vw"
+                      className="object-cover transition-transform duration-700 ease-out group-hover/card:scale-105"
                     />
                     {/* Shadow gradient overlays */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0C1018] via-[#0C1018]/30 to-transparent" />
@@ -404,10 +410,12 @@ export default function TeamScrollAnimation() {
 
                 {/* Image portion */}
                 <div className="relative w-full h-44 overflow-hidden shrink-0">
-                  <img
+                  <Image
                     src={sol.image}
-                    alt={sol.title}
-                    className="w-full h-full object-cover"
+                    alt={sol.title.replace(/\s+/g, " ")}
+                    fill
+                    sizes="100vw"
+                    className="object-cover"
                   />
                   {/* Shadow gradient overlays */}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0C1018] via-[#0C1018]/30 to-transparent" />

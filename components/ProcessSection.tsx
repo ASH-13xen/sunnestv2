@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
+import { loadGsap, isDesktopWidth, onLayoutChange } from "@/lib/gsap";
 
 const STEPS = [
   {
@@ -122,9 +123,7 @@ export default function ProcessSection() {
     let isMounted = true;
 
     async function init() {
-      const { gsap } = await import("gsap");
-      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-      gsap.registerPlugin(ScrollTrigger);
+      const { gsap, ScrollTrigger } = await loadGsap();
       if (!isMounted) return;
 
       st?.kill();
@@ -140,7 +139,7 @@ export default function ProcessSection() {
 
       if (!section) return;
 
-      const isMobile = window.innerWidth < 1000;
+      const isMobile = !isDesktopWidth();
 
       if (!isMobile && desktopStage && dCards.length === STEPS.length) {
         dCards.forEach((card, i) => {
@@ -151,7 +150,7 @@ export default function ProcessSection() {
         st = ScrollTrigger.create({
           trigger: section,
           start: "top top",
-          end: `+=${window.innerHeight * 4}`,
+          end: () => `+=${window.innerHeight * 4}`,
           scrub: 1,
           pin: true,
           anticipatePin: 1,
@@ -180,7 +179,7 @@ export default function ProcessSection() {
         stMobile = ScrollTrigger.create({
           trigger: section,
           start: "top top",
-          end: `+=${window.innerHeight * 4}`,
+          end: () => `+=${window.innerHeight * 4}`,
           scrub: 1,
           pin: true,
           anticipatePin: 1,
@@ -203,17 +202,18 @@ export default function ProcessSection() {
 
     init();
 
-    let resizeTimer: ReturnType<typeof setTimeout>;
-    const onResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(init, 250);
-    };
-    window.addEventListener("resize", onResize);
+    // Rebuild only when switching between the desktop and mobile layouts —
+    // killing and re-creating the pin on every mobile toolbar resize removed
+    // its pin-spacer mid-scroll, so the page height (and scroll position)
+    // jumped.
+    const stopLayoutWatch = onLayoutChange(async () => {
+      await init();
+      (await loadGsap()).ScrollTrigger.refresh();
+    });
 
     return () => {
       isMounted = false;
-      window.removeEventListener("resize", onResize);
-      clearTimeout(resizeTimer);
+      stopLayoutWatch();
       st?.kill();
       stMobile?.kill();
     };
@@ -230,7 +230,7 @@ export default function ProcessSection() {
       ref={sectionRef}
       style={{
         background:     "#06080D",
-        minHeight:      "100vh",
+        minHeight:      "100svh",
         display:        "flex",
         flexDirection:  "column",
         overflow:       "hidden",

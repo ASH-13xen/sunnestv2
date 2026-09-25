@@ -4,20 +4,40 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 
+// How long the brand splash stays up once the page is interactive. It used to
+// wait for window `load` — i.e. every image and the hero video on the page —
+// and then add another ~2 s on top, which on mobile data meant many seconds of
+// staring at the logo. The page is usable as soon as React hydrates.
+const SPLASH_MS = 900;
+
+const READY_EVENT = "sunnest:ready";
+
+declare global {
+  interface Window {
+    __sunnestReady?: boolean;
+  }
+}
+
+/** Runs `cb` once the splash starts fading out (immediately if it already has). */
+export function onSiteReady(cb: () => void) {
+  if (window.__sunnestReady) {
+    cb();
+    return () => {};
+  }
+  window.addEventListener(READY_EVENT, cb, { once: true });
+  return () => window.removeEventListener(READY_EVENT, cb);
+}
+
 export default function LoadingScreen() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (document.readyState === "complete") {
-      const t = setTimeout(() => setLoading(false), 2200);
-      return () => clearTimeout(t);
-    }
-    const onLoad = () => {
-      const t = setTimeout(() => setLoading(false), 1800);
-      return () => clearTimeout(t);
-    };
-    window.addEventListener("load", onLoad);
-    return () => window.removeEventListener("load", onLoad);
+    const t = setTimeout(() => {
+      setLoading(false);
+      window.__sunnestReady = true;
+      window.dispatchEvent(new Event(READY_EVENT));
+    }, SPLASH_MS);
+    return () => clearTimeout(t);
   }, []);
 
   return (
@@ -27,7 +47,7 @@ export default function LoadingScreen() {
           key="loader"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.65, ease: "easeInOut" }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
           className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#0A1628]"
         >
           {/* The lockup artwork already contains the wordmark and tagline, so

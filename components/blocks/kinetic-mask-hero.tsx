@@ -3,19 +3,28 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
+import { onSiteReady } from "@/components/ui/LoadingScreen";
 
 // ─── Kinetic Mask Config Variables ──────────────────────────────────────────
 // You can adjust these variables directly to fine-tune the zoom animation:
 const MAX_ZOOM_SCALE = 100; // Max zoom size for letters (e.g. 85, 550, 1500)
 const SCROLL_SENSITIVITY = 0.004; // Sensitivity of manual scroll (e.g. 0.0006, 0.0012)
 const ZOOM_EASING_POWER = 4; // Easing power curve (higher = starts slower, speeds up at the end)
-const AUTO_ZOOM_TRIGGER = false; // TRUE = zoom completely on a single scroll flick; FALSE = zoom links directly to wheel scroll ticks
-const AUTO_ZOOM_DURATION = 0.95; // Animation duration in seconds when in single-scroll trigger mode (AUTO_ZOOM_TRIGGER = true)
-const REVERSE_DURATION = 0.85; // Duration in seconds when zooming out in single-scroll trigger mode (AUTO_ZOOM_TRIGGER = true)
 
-// --- Scroll Cushion/Hold Configuration ---
+// --- Scroll Cushion/Hold Configuration (desktop wheel only) ---
 const SCROLL_HOLD_BUFFER = 0.5; // Extra manual scroll depth (0.0 to 1.0+) the user must scroll through while the video stays fully zoomed before unlocking the page (e.g. 0.35, 0.5)
-const AUTO_ZOOM_HOLD_DELAY = 600; // Delay in milliseconds after auto-zoom finishes before scroll is unlocked (e.g. 300, 600)
+
+// --- Touch devices: the zoom plays once on its own, the page is never locked ---
+const AUTO_ZOOM_DELAY = 1100; // ms the SUNNEST POWER title is held after the splash screen before zooming
+const AUTO_ZOOM_DURATION = 2.2; // seconds for the automatic zoom
+
+// Video starts playing once the zoom is this far through (before that it only
+// shows through the letters, where a still frame looks the same).
+const VIDEO_PLAY_AT = 0.85;
+
+// Canvas resolution cap — full devicePixelRatio (3x on iPhones) means copying
+// ~9x the pixels every frame for no visible gain on moving footage.
+const MAX_CANVAS_DPR = 1.5;
 
 // --- Hero Background Tint Configuration (Control overlay opacity and colors here) ---
 const NIGHT_OVERLAY_COLOR = "#0A1628";
@@ -26,408 +35,312 @@ const DAY_OVERLAY_OPACITY = 0.65;    // Opacity overlay for light mode (slightly
 // ──────────────────────────────────────────────────────────────────────────
 
 interface KineticMaskHeroProps {
+  /** Full-quality video for desktop. */
   mediaSrc: string;
+  /** Lighter video for phones and tablets. Falls back to `mediaSrc`. */
+  mobileMediaSrc?: string;
+  /** Still frame drawn into the canvas until the video has data. */
   posterSrc?: string;
   bgImageSrc: string;
-  isActive?: boolean;
-  onExpansionChange?: (expanded: boolean) => void;
   onProgressChange?: (progress: number) => void;
+}
+
+// Phones and tablets. They get the self-playing zoom instead of the
+// wheel-driven one, so a touch never has to be intercepted.
+function isTouchDevice() {
+  return window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 }
 
 export default function KineticMaskHero({
   mediaSrc,
+  mobileMediaSrc,
   posterSrc,
   bgImageSrc,
-  isActive = true,
-  onExpansionChange,
   onProgressChange,
 }: KineticMaskHeroProps) {
   const { theme } = useTheme();
   const isNight = theme === "night";
 
   const pageBg = isNight ? "#0A1628" : "#FBF8F0";
-  const pageText = isNight ? "#FBF8F0" : "#0A1628";
-  const goldColor = isNight ? "#60A5FA" : "#D4A017";
-  const paraText = isNight ? "rgba(255, 255, 255, 0.65)" : "rgba(10, 22, 40, 0.68)";
 
   const imageFilter = isNight ? "url(#aerial-filter)" : "none";
   const overlayColor = isNight ? NIGHT_OVERLAY_COLOR : DAY_OVERLAY_COLOR;
   const overlayOpacity = isNight ? NIGHT_OVERLAY_OPACITY : DAY_OVERLAY_OPACITY;
 
   const progressVal = useMotionValue(0);
-  const [mediaFullyExpanded, setMediaFullyExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  // Keep the canvas pixel resolution in sync with the viewport
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener("resize", resize);
-    return () => window.removeEventListener("resize", resize);
-  }, []);
-
-  const onExpansionChangeRef = useRef(onExpansionChange);
-  const onProgressChangeRef = useRef(onProgressChange);
-  const targetProgress = useRef(0);
-  const isAnimating = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const vid = videoRef.current;
-    if (!vid) return;
-    vid.defaultMuted = true;
-    vid.muted = true;
-
-    if (!isActive) {
-      vid.pause();
-      return;
-    }
-
-    // Prime the video initially so the first frame is loaded/cached
-    if (vid.paused && vid.currentTime === 0) {
-      vid
-        .play()
-        .then(() => {
-          vid.pause();
-        })
-        .catch((err) => {
-          console.warn("Priming video play failed:", err);
-        });
-    }
-
-    const unsubscribe = progressVal.on("change", (latest) => {
-      if (latest > 0.85) {
-        if (vid.paused) {
-          vid.play().catch((err) => {
-            // Ignore auto-play block issues
-          });
-        }
-      } else {
-        if (!vid.paused) {
-          vid.pause();
-          vid.currentTime = 0;
-        }
-      }
-    });
-
-    return () => {
-      unsubscribe();
-    };
-  }, [isActive, progressVal]);
-
-  // Copy video frames into the canvas on every animation frame.
-  // Using a canvas inside foreignObject instead of a raw <video> element
-  // fixes iOS Safari: iOS extracts <video> from SVG foreignObject onto a
-  // separate GPU compositing layer (bypassing the SVG mask), but a <canvas>
-  // drawn with drawImage stays in the normal compositing stack so the mask works.
-  useEffect(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    let rafId: number;
-    const draw = () => {
-      if (video.readyState >= 2 && video.videoWidth > 0) {
-        const cw = canvas.clientWidth || 1000;
-        const ch = canvas.clientHeight || 1000;
-        if (canvas.width !== cw || canvas.height !== ch) {
-          canvas.width = cw;
-          canvas.height = ch;
-        }
-        const scale = Math.max(
-          canvas.width / video.videoWidth,
-          canvas.height / video.videoHeight,
-        );
-        const dw = video.videoWidth * scale;
-        const dh = video.videoHeight * scale;
-        ctx.drawImage(
-          video,
-          (canvas.width - dw) / 2,
-          (canvas.height - dh) / 2,
-          dw,
-          dh,
-        );
-      }
-      rafId = requestAnimationFrame(draw);
-    };
-    draw();
-    return () => cancelAnimationFrame(rafId);
-  }, []);
-  const autoZoomTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  // Refs keep event-handler closures stable — no re-registration on state change.
-  const mediaFullyExpandedRef = useRef(false);
-  const touchStartYRef = useRef(0);
-
-  useEffect(() => {
-    onExpansionChangeRef.current = onExpansionChange;
-  }, [onExpansionChange]);
+  const onProgressChangeRef = useRef(onProgressChange);
 
   useEffect(() => {
     onProgressChangeRef.current = onProgressChange;
   }, [onProgressChange]);
 
-  // Synchronize changes to progressVal back to the parent component (clamped to 1.0 for visual consistency)
+  // Text layout switch. Width-only: mobile toolbars change the height on
+  // nearly every scroll and must not re-render the whole SVG.
   useEffect(() => {
-    const handler = (latest: number) => {
-      onProgressChangeRef.current?.(Math.min(latest, 1.0));
-    };
-
-    return progressVal.on("change", handler);
-  }, [progressVal]);
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (autoZoomTimeoutRef.current) clearTimeout(autoZoomTimeoutRef.current);
-    };
+    const mq = window.matchMedia("(max-width: 767px)");
+    const check = () => setIsMobile(mq.matches);
+    check();
+    mq.addEventListener("change", check);
+    return () => mq.removeEventListener("change", check);
   }, []);
 
-  // Scroll and touch triggers.
-  // All handlers use refs for state so the effect only needs to re-run when
-  // isActive changes — no stale-closure re-registration on every state tick.
+  // Keep the parent's decorative frame in sync (clamped to 1.0).
   useEffect(() => {
-    if (!isActive) return;
+    return progressVal.on("change", (latest) => {
+      onProgressChangeRef.current?.(Math.min(latest, 1.0));
+    });
+  }, [progressVal]);
 
-    // Local helper keeps the ref and React state in sync atomically.
-    const setExpanded = (val: boolean) => {
-      mediaFullyExpandedRef.current = val;
-      setMediaFullyExpanded(val);
+  // ── Video → canvas ────────────────────────────────────────────────────────
+  // The video is drawn into a plain HTML canvas that the SVG cover masks.
+  // (iOS lifts a <video> inside SVG foreignObject onto its own GPU layer,
+  // bypassing the mask; a canvas stays in the normal compositing stack.)
+  //
+  // Frames are only copied while the video is actually playing AND the hero
+  // is on screen. This used to run every animation frame for the lifetime of
+  // the page — even paused, even scrolled far away — which kept the main
+  // thread busy and made scrolling janky on phones.
+  useEffect(() => {
+    const root = rootRef.current;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!root || !video || !canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    video.defaultMuted = true;
+    video.muted = true;
+    video.src =
+      mobileMediaSrc && (isTouchDevice() || window.innerWidth < 1024)
+        ? mobileMediaSrc
+        : mediaSrc;
+
+    let poster: HTMLImageElement | null = null;
+    let visible = true;
+    let rafId = 0;
+
+    const drawCover = (src: CanvasImageSource, w: number, h: number) => {
+      if (!w || !h) return;
+      const scale = Math.max(canvas.width / w, canvas.height / h);
+      const dw = w * scale;
+      const dh = h * scale;
+      ctx.drawImage(src, (canvas.width - dw) / 2, (canvas.height - dh) / 2, dw, dh);
     };
 
-    // Users who've asked the OS for reduced motion don't get the scroll-jack
-    // zoom at all — jump straight to the final state and let the page behave
-    // like a normal, unlocked page from the first frame.
+    const drawFrame = () => {
+      if (video.readyState >= 2 && video.videoWidth > 0) {
+        drawCover(video, video.videoWidth, video.videoHeight);
+      } else if (poster?.complete && poster.naturalWidth > 0) {
+        drawCover(poster, poster.naturalWidth, poster.naturalHeight);
+      }
+    };
+
+    const loop = () => {
+      drawFrame();
+      rafId = requestAnimationFrame(loop);
+    };
+    const startLoop = () => {
+      if (!rafId && visible && !video.paused) rafId = requestAnimationFrame(loop);
+    };
+    const stopLoop = () => {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
+
+    if (posterSrc) {
+      poster = new Image();
+      poster.onload = drawFrame;
+      poster.src = posterSrc;
+    }
+
+    // Resizing a canvas clears it, so redraw straight away — the old code
+    // left it blank until the next frame, which flickered on every resize.
+    const resize = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, MAX_CANVAS_DPR);
+      const w = Math.round(canvas.clientWidth * dpr);
+      const h = Math.round(canvas.clientHeight * dpr);
+      if (w && h && (canvas.width !== w || canvas.height !== h)) {
+        canvas.width = w;
+        canvas.height = h;
+        drawFrame();
+      }
+    };
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+
+    // Play only when the zoom has opened up and the hero is on screen.
+    const syncPlayback = () => {
+      const shouldPlay = visible && progressVal.get() > VIDEO_PLAY_AT;
+      if (shouldPlay && video.paused) {
+        video.play().catch(() => {});
+      } else if (!shouldPlay && !video.paused) {
+        video.pause();
+      }
+    };
+    const unsubscribe = progressVal.on("change", (latest) => {
+      // Zoomed back into the letters (desktop): rewind to the opening shot.
+      if (latest <= VIDEO_PLAY_AT && video.currentTime !== 0) {
+        video.pause();
+        video.currentTime = 0;
+      }
+      syncPlayback();
+    });
+
+    const io = new IntersectionObserver(([entry]) => {
+      visible = entry.isIntersecting;
+      syncPlayback();
+      if (visible) startLoop();
+      else stopLoop();
+    });
+    io.observe(root);
+
+    video.addEventListener("play", startLoop);
+    video.addEventListener("pause", stopLoop);
+    video.addEventListener("loadeddata", drawFrame);
+    video.addEventListener("seeked", drawFrame);
+
+    // iOS won't decode a first frame for canvas until the video has played
+    // once, so prime it with a muted play → pause.
+    video
+      .play()
+      .then(() => {
+        if (progressVal.get() <= VIDEO_PLAY_AT) video.pause();
+      })
+      .catch(() => {});
+
+    return () => {
+      stopLoop();
+      ro.disconnect();
+      io.disconnect();
+      unsubscribe();
+      video.removeEventListener("play", startLoop);
+      video.removeEventListener("pause", stopLoop);
+      video.removeEventListener("loadeddata", drawFrame);
+      video.removeEventListener("seeked", drawFrame);
+    };
+  }, [mediaSrc, mobileMediaSrc, posterSrc, progressVal]);
+
+  // ── Zoom triggers ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    // Users who've asked the OS for reduced motion don't get the zoom at
+    // all — jump straight to the final state.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       progressVal.set(1);
-      targetProgress.current = 1;
-      setExpanded(true);
-      onExpansionChangeRef.current?.(true);
       return;
     }
 
-    // ── Desktop wheel ─────────────────────────────────────────────────────────
-    const handleWheel = (e: WheelEvent) => {
-      const expanded = mediaFullyExpandedRef.current;
+    // Navbar jumps (Navbar dispatches "page-transition"): going anywhere but
+    // the hero finishes the intro; the logo / Home rewinds it on desktop.
+    let finishIntro = () => {};
+    let rewindIntro = () => {};
+    const handleNavJump = (e: Event) => {
+      const href = (e as CustomEvent<{ href: string }>).detail?.href;
+      if (href === "#hero") rewindIntro();
+      else finishIntro();
+    };
+    window.addEventListener("page-transition", handleNavJump);
 
-      if (AUTO_ZOOM_TRIGGER) {
-        if (e.deltaY > 0 && !expanded && targetProgress.current !== 1) {
-          e.preventDefault();
-          targetProgress.current = 1;
-          isAnimating.current = true;
-          if (autoZoomTimeoutRef.current) clearTimeout(autoZoomTimeoutRef.current);
-          animate(progressVal, 1, {
-            duration: AUTO_ZOOM_DURATION,
-            ease: [0.16, 1, 0.3, 1],
-            onComplete: () => {
-              autoZoomTimeoutRef.current = setTimeout(() => {
-                setExpanded(true);
-                onExpansionChangeRef.current?.(true);
-                isAnimating.current = false;
-              }, AUTO_ZOOM_HOLD_DELAY);
-            },
-          });
-        } else if (e.deltaY < 0 && expanded && targetProgress.current !== 0 && window.scrollY <= 5) {
-          e.preventDefault();
-          targetProgress.current = 0;
-          isAnimating.current = true;
-          setExpanded(false);
-          onExpansionChangeRef.current?.(false);
-          animate(progressVal, 0, {
-            duration: REVERSE_DURATION,
-            ease: [0.16, 1, 0.3, 1],
-            onComplete: () => { isAnimating.current = false; },
-          });
-        } else if (isAnimating.current) {
-          e.preventDefault();
-        }
-      } else {
-        const maxProgressLimit = 1.0 + SCROLL_HOLD_BUFFER;
-        if (expanded && e.deltaY < 0 && window.scrollY <= 5) {
-          setExpanded(false);
-          onExpansionChangeRef.current?.(false);
-          targetProgress.current = 1.0;
+    // ── Touch devices: play once, never lock the page ──────────────────────
+    // The old version intercepted every touchmove on the window (non-passive,
+    // never removed) to drive the zoom from swipes. That blocked native
+    // scrolling everywhere on the site, and snapped users back into the hero
+    // whenever they flicked to the top. Now the zoom plays on its own shortly
+    // after the splash screen — or right away if the user starts scrolling
+    // first — and only ever plays once.
+    if (isTouchDevice()) {
+      let started = false;
+      let delayTimer: ReturnType<typeof setTimeout> | undefined;
+      let controls: ReturnType<typeof animate> | undefined;
+
+      const play = () => {
+        if (started) return;
+        started = true;
+        clearTimeout(delayTimer);
+        window.removeEventListener("scroll", play);
+        controls = animate(progressVal, 1, {
+          duration: AUTO_ZOOM_DURATION,
+          ease: [0.45, 0, 0.55, 1],
+        });
+      };
+
+      finishIntro = () => {
+        started = true;
+        clearTimeout(delayTimer);
+        window.removeEventListener("scroll", play);
+        controls?.stop();
+        progressVal.set(1);
+      };
+
+      const stopReady = onSiteReady(() => {
+        delayTimer = setTimeout(play, AUTO_ZOOM_DELAY);
+      });
+      window.addEventListener("scroll", play, { passive: true });
+
+      return () => {
+        stopReady();
+        clearTimeout(delayTimer);
+        controls?.stop();
+        window.removeEventListener("scroll", play);
+        window.removeEventListener("page-transition", handleNavJump);
+      };
+    }
+
+    // ── Desktop: the wheel drives the zoom ─────────────────────────────────
+    const maxProgress = 1.0 + SCROLL_HOLD_BUFFER;
+    let expanded = false;
+
+    finishIntro = () => {
+      expanded = true;
+      progressVal.set(maxProgress);
+    };
+    rewindIntro = () => {
+      expanded = false;
+      progressVal.set(0);
+    };
+
+    const handleWheel = (e: WheelEvent) => {
+      if (expanded) {
+        // Scrolling up at the very top re-enters the zoom.
+        if (e.deltaY < 0 && window.scrollY <= 5) {
+          expanded = false;
           e.preventDefault();
           animate(progressVal, 1.0, { duration: 0.1, ease: "linear" });
-        } else if (!expanded) {
-          e.preventDefault();
-          const newProgress = Math.min(
-            Math.max(progressVal.get() + e.deltaY * SCROLL_SENSITIVITY, 0),
-            maxProgressLimit,
-          );
-          animate(progressVal, newProgress, { duration: 0.15, ease: "linear" });
-          if (newProgress >= maxProgressLimit) {
-            setExpanded(true);
-            onExpansionChangeRef.current?.(true);
-            targetProgress.current = maxProgressLimit;
-          }
         }
-      }
-    };
-
-    // ── Proportional touch zoom ───────────────────────────────────────────────
-    // Swipe distance directly drives progress (45% screen height = full zoom).
-    // On release, snap forward if progress > 35%, snap back otherwise.
-    // This lets the user see the whole animation at their own pace instead of
-    // a 20px flick firing an uncontrollable auto-zoom.
-    const SWIPE_FULL_PX  = window.innerHeight * 0.45;
-    const SWIPE_DEAD_PX  = 12;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      // Ignore new touches while a commit/reverse animation is in flight —
-      // otherwise a second swipe during that ~1.3s window (very common on
-      // mobile, since people keep swiping) can hijack progressVal and,
-      // depending on where it lands, undo the zoom that's already committing.
-      // That's what caused the "zooms in then comes back" repeating bug.
-      if (isAnimating.current) return;
-      touchStartYRef.current = e.touches[0].clientY;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isAnimating.current) return;
-      const startY   = touchStartYRef.current;
-      if (!startY) return;
-      const expanded = mediaFullyExpandedRef.current;
-      const deltaY   = startY - e.touches[0].clientY;
-
-      if (!expanded) {
-        // Prevent default for ANY downward movement here — not just past the
-        // dead zone — otherwise the browser's native scroll/bounce sneaks in
-        // during the first ~12px of drag and the scroll-lock below snaps it
-        // back, producing a visible "scrolls down a little then springs back"
-        // stutter on mobile.
-        e.preventDefault();
-        if (deltaY > SWIPE_DEAD_PX) {
-          const progress = Math.min((deltaY - SWIPE_DEAD_PX) / SWIPE_FULL_PX, 1.0);
-          progressVal.set(progress);
-          targetProgress.current = progress;
-        }
-      } else if (window.scrollY <= 5 && deltaY < -SWIPE_DEAD_PX) {
-        e.preventDefault();
-        // Map swipe-up distance back to reverse progress (1 → 0)
-        const swipeDist       = Math.max(deltaY + SWIPE_DEAD_PX, -SWIPE_FULL_PX);
-        const reverseProgress = 1.0 + swipeDist / SWIPE_FULL_PX;
-        progressVal.set(Math.max(reverseProgress, 0));
-        targetProgress.current = reverseProgress;
-      }
-    };
-
-    const handleTouchEnd = () => {
-      if (isAnimating.current) return;
-      const current  = progressVal.get();
-      const expanded = mediaFullyExpandedRef.current;
-
-      if (!expanded) {
-        if (current > 0.35) {
-          // Snap to full zoom
-          targetProgress.current = 1;
-          isAnimating.current    = true;
-          animate(progressVal, 1, {
-            duration: 0.7,
-            ease: [0.16, 1, 0.3, 1],
-            onComplete: () => {
-              autoZoomTimeoutRef.current = setTimeout(() => {
-                setExpanded(true);
-                onExpansionChangeRef.current?.(true);
-                isAnimating.current = false;
-              }, AUTO_ZOOM_HOLD_DELAY);
-            },
-          });
-        } else {
-          // Snap back to start
-          targetProgress.current = 0;
-          isAnimating.current = true;
-          animate(progressVal, 0, {
-            duration: 0.45,
-            ease: [0.16, 1, 0.3, 1],
-            onComplete: () => { isAnimating.current = false; },
-          });
-        }
-      } else if (current < 0.5) {
-        // Swiped back far enough — reverse the zoom
-        setExpanded(false);
-        onExpansionChangeRef.current?.(false);
-        targetProgress.current = 0;
-        isAnimating.current = true;
-        animate(progressVal, 0, {
-          duration: REVERSE_DURATION,
-          ease: [0.16, 1, 0.3, 1],
-          onComplete: () => { isAnimating.current = false; },
-        });
-      }
-
-      touchStartYRef.current = 0;
-    };
-
-    // ── Nav-click handler ─────────────────────────────────────────────────────
-    const handleGlobalClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("nav")) return;
-
-      // Matched by attribute, not by text: the navbar logo is now a single
-      // image whose wordmark is baked into the artwork, so there is no "Sun"
-      // or "Nest" text node left to sniff for.
-      if (target.closest("[data-nav-logo]")) {
-        setExpanded(false);
-        onExpansionChangeRef.current?.(false);
-        progressVal.set(0);
-        targetProgress.current = 0;
         return;
       }
-
-      if (!target.closest("ul")) return;
-
-      setExpanded(true);
-      onExpansionChangeRef.current?.(true);
-      progressVal.set(1.0 + SCROLL_HOLD_BUFFER);
-      targetProgress.current = 1.0 + SCROLL_HOLD_BUFFER;
+      e.preventDefault();
+      const next = Math.min(
+        Math.max(progressVal.get() + e.deltaY * SCROLL_SENSITIVITY, 0),
+        maxProgress,
+      );
+      animate(progressVal, next, { duration: 0.15, ease: "linear" });
+      if (next >= maxProgress) expanded = true;
     };
 
     const handleScroll = () => {
-      if (mediaFullyExpandedRef.current) return;
-      // Wheel and touch are both fully intercepted (preventDefault) above, so
-      // the only way a native scroll ever reaches here while unexpanded is
-      // scrollbar-drag, keyboard (Space/PageDown/Arrow/Home/End), or focus
-      // moving into view (Tab navigation) — i.e. exactly the input methods a
-      // mouse-only scroll-jack locks out. Snapping back to 0 would trap
-      // keyboard, scrollbar, and screen-reader users on the hero with no way
-      // to reach the rest of the site, so instead treat any such scroll as
-      // "skip the intro" and unlock immediately rather than fighting it.
+      if (expanded) return;
+      // Wheel input is intercepted above, so a native scroll while the intro
+      // is still running comes from the scrollbar, keyboard or Tab focus.
+      // Trapping those users on the hero would lock them out of the site, so
+      // treat it as "skip the intro".
       progressVal.set(1);
-      targetProgress.current = 1;
-      setExpanded(true);
-      onExpansionChangeRef.current?.(true);
+      expanded = true;
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
-    window.addEventListener("scroll", handleScroll);
-    window.addEventListener("touchstart", handleTouchStart, { passive: false });
-    window.addEventListener("touchmove", handleTouchMove, { passive: false });
-    window.addEventListener("touchend", handleTouchEnd);
-    document.addEventListener("click", handleGlobalClick);
+    window.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       window.removeEventListener("wheel", handleWheel);
       window.removeEventListener("scroll", handleScroll);
-      window.removeEventListener("touchstart", handleTouchStart);
-      window.removeEventListener("touchmove", handleTouchMove);
-      window.removeEventListener("touchend", handleTouchEnd);
-      document.removeEventListener("click", handleGlobalClick);
+      window.removeEventListener("page-transition", handleNavJump);
     };
-  }, [isActive]);
+  }, [progressVal]);
 
   // Map progressVal directly to styling transforms via useTransform
   // Scale is capped at 85x to avoid vector path rasterization lag in browsers
@@ -453,17 +366,11 @@ export default function KineticMaskHero({
 
   return (
     <div
-      className="relative w-full h-dvh overflow-hidden"
+      ref={rootRef}
+      className="relative w-full h-svh overflow-hidden"
       style={{
         backgroundColor: pageBg,
         transition: "background-color 0.4s ease",
-        // While the zoom hasn't finished, fully own touch gestures so the
-        // browser never starts its own native scroll/rubber-band under us —
-        // that's what caused the "scrolls down a little then snaps back"
-        // stutter on mobile. Release it once expanded so normal page scroll
-        // (and the swipe-to-reverse handler) works as expected.
-        touchAction: mediaFullyExpanded ? "auto" : "none",
-        overscrollBehavior: mediaFullyExpanded ? "auto" : "none",
       }}
     >
       {/* Dark backdrop */}
@@ -471,11 +378,10 @@ export default function KineticMaskHero({
 
       {/* Video source — kept nearly-invisible in the HTML tree so iOS decodes
           frames for canvas.drawImage() without the foreignObject GPU-layer bug. */}
+      {/* src is picked in the video effect (mobile vs desktop file). */}
       <video
         ref={videoRef}
-        src={mediaSrc}
-        poster={posterSrc}
-        autoPlay
+        preload="auto"
         muted
         loop
         playsInline

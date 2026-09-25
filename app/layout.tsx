@@ -84,7 +84,6 @@ export default function RootLayout({
               "catch(e){document.documentElement.setAttribute('data-theme','night');}",
           }}
         />
-        <link rel="preload" href="/hero-bg.mp4" as="video" type="video/mp4" />
         {/* Structured data: tells Google which image is the company logo, and
             that this is a Raipur business. Escaping `<` guards against HTML
             injection through the serialized payload. */}

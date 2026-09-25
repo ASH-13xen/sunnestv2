@@ -62,9 +62,10 @@
   --color-text-light: var(--text-light);
 }
 
-html {
-  scroll-behavior: smooth;
-}
+/* No `scroll-behavior: smooth` here: GSAP ScrollTrigger restores the scroll
+   position when it re-measures pinned sections, and a smooth-scrolling root
+   turns that instant restore into a visible jump. Anchor jumps go through
+   PageTransitionOverlay instead. */
 
 html,
 body {

@@ -28,12 +28,12 @@ export default function PageTransitionOverlay() {
 
   useEffect(() => {
     if (phase !== "idle") {
-      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [phase]);
 
@@ -81,8 +81,6 @@ export default function PageTransitionOverlay() {
         zIndex: 200,
         pointerEvents: "none",
         display: "flex",
-        width: "100vw",
-        height: "100vh",
       }}
     >
       {/* 5 Vertical staggered panels */}

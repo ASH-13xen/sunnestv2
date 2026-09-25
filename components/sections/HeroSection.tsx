@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useRef, useCallback } from "react";
 import KineticMaskHero from "@/components/blocks/kinetic-mask-hero";
 
-const BG_SRC    = "/images/hero-bg.png";
-const MEDIA_SRC = "/hero-bg.mp4";
+const BG_SRC           = "/images/hero-bg.webp";
+const MEDIA_SRC        = "/hero-desktop.mp4"; // 1080p, ~5 MB
+const MOBILE_MEDIA_SRC = "/hero-mobile.mp4";  // 720p, ~3 MB
+const POSTER_SRC       = "/hero-poster.webp";
 
 // ─── Design Rectangle Variables ─────────────────────────────────────────────
 const RECT_BORDER_THICKNESS = "2px";
@@ -17,7 +19,6 @@ const RECT_Z_INDEX          = 45;
 // ──────────────────────────────────────────────────────────────────────────
 
 export default function HeroSection() {
-  const [heroExpanded, setHeroExpanded] = useState(false);
   const rectRef = useRef<HTMLDivElement>(null);
 
   const handleProgressChange = useCallback((progress: number) => {
@@ -27,7 +28,11 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <div className="w-full h-screen relative overflow-hidden">
+    // svh, not h-screen (100vh): on mobile 100vh is measured with the
+    // browser toolbar hidden, so the hero was taller than the visible screen
+    // and didn't match the inner hero's height. svh never changes while
+    // scrolling, so nothing below the hero shifts.
+    <div className="w-full h-svh relative overflow-hidden">
       {/* Premium Half-White Design Rectangle — fades out as card expands */}
       <div
         ref={rectRef}
@@ -49,9 +54,9 @@ export default function HeroSection() {
 
       <KineticMaskHero
         mediaSrc={MEDIA_SRC}
+        mobileMediaSrc={MOBILE_MEDIA_SRC}
+        posterSrc={POSTER_SRC}
         bgImageSrc={BG_SRC}
-        isActive={true}
-        onExpansionChange={setHeroExpanded}
         onProgressChange={handleProgressChange}
       />
     </div>

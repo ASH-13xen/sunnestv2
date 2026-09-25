@@ -37,12 +37,12 @@ export default function Navbar() {
   // Lock scroll when mobile menu drawer is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
     return () => {
-      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [isOpen]);
 
@@ -78,13 +78,10 @@ export default function Navbar() {
       >
         {/* ── Logo ──────────────────────────────────────────────────────────
             The full lockup image carries the wordmark itself, so there is no
-            text node beside it. `data-nav-logo` is load-bearing:
-            kinetic-mask-hero's global click handler uses it to recognise a
-            logo click and rewind the hero zoom. It used to sniff for the
-            literal text "Sun"/"Nest", which stopped working the moment the
-            wordmark became part of the image. */}
+            text node beside it. Clicking it dispatches "page-transition" to
+            "#hero", which kinetic-mask-hero listens for to rewind the zoom
+            (desktop). */}
         <span
-          data-nav-logo
           className="inline-flex items-center select-none z-[60] cursor-pointer"
           onClick={() => handleNavClick("#hero")}
         >
