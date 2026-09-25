@@ -14,9 +14,12 @@ const ZOOM_EASING_POWER = 4; // Easing power curve (higher = starts slower, spee
 // --- Scroll Cushion/Hold Configuration (desktop wheel only) ---
 const SCROLL_HOLD_BUFFER = 0.5; // Extra manual scroll depth (0.0 to 1.0+) the user must scroll through while the video stays fully zoomed before unlocking the page (e.g. 0.35, 0.5)
 
-// --- Touch devices: the zoom plays once on its own, the page is never locked ---
-const AUTO_ZOOM_DELAY = 1100; // ms the SUNNEST POWER title is held after the splash screen before zooming
-const AUTO_ZOOM_DURATION = 2.2; // seconds for the automatic zoom
+// --- Touch devices: swipe drives the zoom ---
+const SWIPE_FULL_FRACTION = 0.45; // Swipe length (fraction of screen height) for a full zoom
+const SWIPE_COMMIT_AT = 0.35; // On release, finish the zoom past this progress, else snap back
+const FLICK_MIN_PX = 50; // A quick flick at least this long…
+const FLICK_MAX_MS = 250; // …and at most this fast also finishes the zoom
+const SWIPE_COMMIT_DURATION = 0.7; // seconds to finish the zoom after release
 
 // Video starts playing once the zoom is this far through (before that it only
 // shows through the letters, where a still frame looks the same).
@@ -245,47 +248,120 @@ export default function KineticMaskHero({
     };
     window.addEventListener("page-transition", handleNavJump);
 
-    // ── Touch devices: play once, never lock the page ──────────────────────
-    // The old version intercepted every touchmove on the window (non-passive,
-    // never removed) to drive the zoom from swipes. That blocked native
-    // scrolling everywhere on the site, and snapped users back into the hero
-    // whenever they flicked to the top. Now the zoom plays on its own shortly
-    // after the splash screen — or right away if the user starts scrolling
-    // first — and only ever plays once.
+    // ── Touch devices: swipe up to zoom ────────────────────────────────────
+    // Swipe distance drives the zoom; on release it finishes (or snaps back).
+    // Once the zoom is done every touch listener is removed and the page
+    // scrolls natively — it never re-locks. (The old version kept a
+    // non-passive touchmove listener on the window for the lifetime of the
+    // page, which made every scroll on the site wait on JavaScript, and it
+    // re-locked the hero whenever the user flicked back to the top.)
     if (isTouchDevice()) {
-      let started = false;
-      let delayTimer: ReturnType<typeof setTimeout> | undefined;
+      const root = rootRef.current;
+      let ready = false; // ignore swipes while the splash screen is up
+      let done = false;
+      let committing = false;
+      let startY = 0;
+      let startTime = 0;
+      let startProgress = 0;
+      let tracking = false;
       let controls: ReturnType<typeof animate> | undefined;
 
-      const play = () => {
-        if (started) return;
-        started = true;
-        clearTimeout(delayTimer);
-        window.removeEventListener("scroll", play);
+      // Stops the browser starting its own scroll/rubber-band under the swipe.
+      if (root) root.style.touchAction = "none";
+
+      const unlock = () => {
+        if (done) return;
+        done = true;
+        committing = false;
+        if (root) root.style.touchAction = "";
+        window.removeEventListener("touchstart", handleTouchStart);
+        window.removeEventListener("touchmove", handleTouchMove);
+        window.removeEventListener("touchend", handleTouchEnd);
+        window.removeEventListener("touchcancel", handleTouchEnd);
+        window.removeEventListener("scroll", handleScroll);
+      };
+
+      const commit = () => {
+        committing = true;
         controls = animate(progressVal, 1, {
-          duration: AUTO_ZOOM_DURATION,
-          ease: [0.45, 0, 0.55, 1],
+          duration: SWIPE_COMMIT_DURATION,
+          ease: [0.16, 1, 0.3, 1],
+          onComplete: unlock,
         });
       };
 
-      finishIntro = () => {
-        started = true;
-        clearTimeout(delayTimer);
-        window.removeEventListener("scroll", play);
+      // The menu drawer lives in <nav> and must keep scrolling normally.
+      const inNav = (e: TouchEvent) => (e.target as Element | null)?.closest?.("nav");
+
+      function handleTouchStart(e: TouchEvent) {
+        if (!ready || committing || inNav(e)) {
+          tracking = false;
+          return;
+        }
+        // A new swipe continues from wherever the zoom currently is, so a
+        // second swipe during the snap-back never jumps it backwards.
+        controls?.stop();
+        tracking = true;
+        startY = e.touches[0].clientY;
+        startTime = performance.now();
+        startProgress = progressVal.get();
+      }
+
+      function handleTouchMove(e: TouchEvent) {
+        if (inNav(e)) return;
+        // Hold the page at the top until the zoom is done — including while
+        // the splash is up or the finishing animation runs.
+        e.preventDefault();
+        if (!tracking) return;
+        const deltaY = startY - e.touches[0].clientY; // + = swipe up
+        const full = window.innerHeight * SWIPE_FULL_FRACTION;
+        progressVal.set(Math.min(Math.max(startProgress + deltaY / full, 0), 1));
+      }
+
+      function handleTouchEnd(e: TouchEvent) {
+        if (!tracking) return;
+        tracking = false;
+        const deltaY = startY - (e.changedTouches[0]?.clientY ?? startY);
+        const isFlick =
+          deltaY > FLICK_MIN_PX && performance.now() - startTime < FLICK_MAX_MS;
+        if (isFlick || progressVal.get() > SWIPE_COMMIT_AT) {
+          commit();
+        } else {
+          controls = animate(progressVal, 0, { duration: 0.45, ease: [0.16, 1, 0.3, 1] });
+        }
+      }
+
+      // Any native scroll that still gets through (VoiceOver, keyboard,
+      // focus) means "skip the intro" rather than trapping the user.
+      function handleScroll() {
+        if (window.scrollY <= 0) return;
         controls?.stop();
         progressVal.set(1);
+        unlock();
+      }
+
+      finishIntro = () => {
+        controls?.stop();
+        progressVal.set(1);
+        unlock();
       };
 
+      // Arriving mid-page (reload / back button) — nothing to lock.
+      if (window.scrollY > 0) finishIntro();
+
       const stopReady = onSiteReady(() => {
-        delayTimer = setTimeout(play, AUTO_ZOOM_DELAY);
+        ready = true;
       });
-      window.addEventListener("scroll", play, { passive: true });
+      window.addEventListener("touchstart", handleTouchStart, { passive: true });
+      window.addEventListener("touchmove", handleTouchMove, { passive: false });
+      window.addEventListener("touchend", handleTouchEnd, { passive: true });
+      window.addEventListener("touchcancel", handleTouchEnd, { passive: true });
+      window.addEventListener("scroll", handleScroll, { passive: true });
 
       return () => {
         stopReady();
-        clearTimeout(delayTimer);
         controls?.stop();
-        window.removeEventListener("scroll", play);
+        unlock();
         window.removeEventListener("page-transition", handleNavJump);
       };
     }
