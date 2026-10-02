@@ -4,77 +4,64 @@ import { Fragment, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { loadGsap } from "@/lib/gsap";
+import { RESELLER_LINE } from "@/lib/site";
 import {
   Package,
   PackageCheck,
   Check,
   ShieldCheck,
   ArrowRight,
+  Plus,
   type LucideIcon,
 } from "lucide-react";
 
 interface Kit {
   title: string;
-  tagline: string;
   icon: LucideIcon;
   output: string;
   description: string;
   includes: string[];
-  stats: { label: string; value: string }[];
+  /** Items this kit adds on top of the Mini Kit — highlighted in the list. */
+  extras?: string[];
   imageUrl: string;
+  /** CSS object-position for the photo inside the image band. */
+  imagePosition?: string;
 }
 
-// PLACEHOLDER SPECS — replace with the real kit sheets before launch.
-// Output ranges and the component list come from the previous product grid;
-// roof area, generation and warranty figures are typical-market placeholders.
+// The Mini Kit is the core electrical set; the Full Kit is everything in the
+// Mini Kit plus structures, cables and connecting accessories.
+const MINI_KIT_ITEMS = [
+  "Solar Panels",
+  "Solar Inverter",
+  "ACDB (AC Distribution Box)",
+  "DCDB (DC Distribution Box)",
+  "Earthing Kit",
+];
+
 const KITS: Kit[] = [
   {
     title: "Mini Kit",
-    tagline: "Homes & small shops",
     icon: Package,
-    output: "3 kW – 5 kW",
+    output: "3 kW – 10 kW",
     description:
-      "A complete, balanced rooftop package for homes and small businesses. Every part is pre-matched, so installation is quick and your bill starts dropping from the first sunny day.",
-    includes: [
-      "Bifacial Mono PERC modules",
-      "On-grid or hybrid inverter",
-      "ACDB + DCDB with surge protection",
-      "Earthing set & lightning arrester",
-      "Solar DC/AC cables & MC4 connectors",
-      "Net-metering & subsidy paperwork",
-    ],
-    stats: [
-      { label: "Roof area", value: "300–500 sq ft" },
-      { label: "Generation", value: "12–20 units/day" },
-      { label: "Warranty", value: "25 yr modules" },
-    ],
-    imageUrl: "/images/products/mini_kit.png",
+      "The core components of a solar power system — panels, inverter, AC/DC distribution boxes and earthing — sourced together and matched to work as one system.",
+    includes: MINI_KIT_ITEMS,
+    imageUrl: "/images/products/mini-kit-project.webp", // rooftop installation
+    imagePosition: "center 70%",
   },
   {
     title: "Full Kit",
-    tagline: "Businesses, schools & factories",
     icon: PackageCheck,
-    output: "10 kW – 100 kW+",
+    output: "3 kW – 10 kW",
     description:
-      "A turnkey plant for commercial, institutional and industrial rooftops, covering structure engineering, high-voltage cabling and commissioning. One order, one team, one warranty.",
-    includes: [
-      "TOPCon / bifacial high-yield modules",
-      "Three-phase on-grid or hybrid inverters",
-      "Hot-dip galvanised mounting structure",
-      "ACDB + DCDB, earthing & lightning arrester",
-      "Remote monitoring & performance reports",
-      "Installation, commissioning & AMC",
-    ],
-    stats: [
-      { label: "Roof area", value: "1,000–10,000+ sq ft" },
-      { label: "Generation", value: "40–400+ units/day" },
-      { label: "Warranty", value: "25 yr modules" },
-    ],
-    imageUrl: "/images/products/full_kit.png",
+      "Everything in the Mini Kit, plus the mounting structures, cables and connecting accessories — a complete package with every part needed for the installation.",
+    includes: MINI_KIT_ITEMS,
+    extras: ["Solar Structures", "Cables", "Connecting Accessories"],
+    imageUrl: "/images/products/full-kit-project.webp", // ground-mounted array on structures
+    imagePosition: "center 65%",
   },
 ];
 
-const RESELLER_LINE = "Authorized Seller for Reliance Energy";
 
 const HEADING_WORDS = "Every Component. One Trusted Source.".split(" ");
 const PARA_WORDS =
@@ -298,8 +285,8 @@ export default function ProductsSection() {
             margin: "0 auto",
           }}
         >
-          Two ready-to-install solar kits. Every panel, inverter and protection
-          component is sourced, tested and warrantied end to end.
+          Two solar kits for 3 kW to 10 kW systems. Choose the core components,
+          or the complete package with structures, cables and accessories.
         </p>
       </div>
 
@@ -495,24 +482,53 @@ export default function ProductsSection() {
             /* Image band: shorter on short screens so both cards always fit. */
             .kit-card-media { height: clamp(88px, 22svh, 240px); }
 
-            /* Stacked (phones): keep each card to roughly half the screen. */
+            /* Included items: a two-column checklist on wider screens… */
+            .kit-card-includes {
+              display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+              gap: 8px 16px;
+            }
+            .kit-inc {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 0.8rem;
+              line-height: 1.35;
+              border: 1px solid transparent;
+            }
+            .kit-inc-extra { border-radius: 999px; padding: 3px 10px 3px 4px; margin-left: -4px; }
+
+            /* …and wrapped chips on phones, where the list replaces the
+               description so both cards still fit on screen. */
             @media (max-width: 767px) {
-              .kit-card-media { height: clamp(72px, 13svh, 130px); }
-              .kit-card-body { padding: 14px 16px 16px !important; gap: 8px !important; }
+              .kit-card-media { height: clamp(64px, 11svh, 120px); }
+              .kit-card-body { padding: 12px 14px 14px !important; gap: 9px !important; }
+              .kit-card-desc { display: none; }
+              .kit-card-includes-label { display: none; }
+              .kit-card-includes { display: flex; flex-wrap: wrap; gap: 5px; }
+              .kit-inc {
+                font-size: 0.68rem;
+                gap: 4px;
+                padding: 3px 8px 3px 4px;
+                border-radius: 999px;
+                border-color: ${tagBorder};
+                background: ${tagBg};
+              }
+              .kit-inc-extra { margin-left: 0; }
+              .kit-inc-icon { width: 14px !important; height: 14px !important; }
+            }
+            /* Tall phones have room for the description too. */
+            @media (max-width: 767px) and (min-height: 780px) {
               .kit-card-desc {
                 display: -webkit-box;
-                -webkit-line-clamp: 3;
+                -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
               }
-              .kit-card-includes, .kit-card-stats { display: none !important; }
             }
-            @media (max-width: 767px) and (max-height: 700px) {
-              .kit-card-desc { -webkit-line-clamp: 2; }
-            }
-            /* Short laptop screens: drop the stats row before anything overflows. */
-            @media (min-width: 768px) and (max-height: 760px) {
-              .kit-card-stats { display: none !important; }
+            /* Short phones (iPhone SE): drop the photo, keep the facts. */
+            @media (max-width: 767px) and (max-height: 600px) {
+              .kit-card-media { display: none; }
             }
           `}</style>
 
@@ -564,11 +580,11 @@ export default function ProductsSection() {
                     >
                       <Image
                         src={kit.imageUrl}
-                        alt={`${kit.title} solar kit`}
+                        alt={`Solar installation — ${kit.title}`}
                         fill
                         sizes="(min-width: 768px) 50vw, 100vw"
                         className="kit-card-img object-cover"
-                        style={{ objectPosition: "center 40%" }}
+                        style={{ objectPosition: kit.imagePosition ?? "center" }}
                       />
                       <div
                         className="absolute inset-0"
@@ -578,12 +594,6 @@ export default function ProductsSection() {
                             : "linear-gradient(to top, rgba(10,22,40,0.45), transparent 60%)",
                         }}
                       />
-                      <span
-                        className="absolute left-4 bottom-3 font-mono text-[10px] font-bold uppercase tracking-[0.22em] px-2.5 py-1 rounded-full"
-                        style={{ background: "rgba(10,22,40,0.7)", color: "#fff" }}
-                      >
-                        {String(i + 1).padStart(2, "0")} · {kit.tagline}
-                      </span>
                     </div>
 
                     {/* Body */}
@@ -639,48 +649,46 @@ export default function ProductsSection() {
                         {kit.description}
                       </p>
 
-                      <ul
-                        className="kit-card-includes grid grid-cols-1 lg:grid-cols-2"
-                        style={{ gap: "7px 16px", margin: 0, padding: 0, listStyle: "none" }}
-                      >
-                        {kit.includes.map((item) => (
-                          <li key={item} className="flex items-start gap-2">
-                            <span
-                              className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-[2px]"
-                              style={{ background: badgeBg }}
-                            >
-                              <Check style={{ width: 10, height: 10, color: goldColor }} />
-                            </span>
-                            <span style={{ fontSize: "0.78rem", lineHeight: 1.4, color: pageText70 }}>
-                              {item}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-
-                      <div className="kit-card-stats grid grid-cols-3" style={{ gap: "8px" }}>
-                        {kit.stats.map((s) => (
-                          <div
-                            key={s.label}
-                            className="rounded-xl"
-                            style={{ background: tagBg, border: `1px solid ${tagBorder}`, padding: "8px 10px" }}
-                          >
-                            <div
-                              style={{
-                                fontSize: "0.6rem",
-                                fontWeight: 700,
-                                letterSpacing: "0.14em",
-                                textTransform: "uppercase",
-                                color: pageText45,
-                              }}
-                            >
-                              {s.label}
-                            </div>
-                            <div style={{ fontSize: "0.8rem", fontWeight: 700, color: pageText, marginTop: 2 }}>
-                              {s.value}
-                            </div>
-                          </div>
-                        ))}
+                      <div className="kit-card-includes-wrap">
+                        <div
+                          className="kit-card-includes-label"
+                          style={{
+                            fontSize: "0.62rem",
+                            fontWeight: 700,
+                            letterSpacing: "0.16em",
+                            textTransform: "uppercase",
+                            color: pageText45,
+                            marginBottom: "8px",
+                          }}
+                        >
+                          What&apos;s included
+                        </div>
+                        <ul className="kit-card-includes" style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                          {[...kit.includes, ...(kit.extras ?? [])].map((item) => {
+                            const isExtra = kit.extras?.includes(item) ?? false;
+                            return (
+                              <li
+                                key={item}
+                                className={isExtra ? "kit-inc kit-inc-extra" : "kit-inc"}
+                                style={isExtra ? { background: badgeBg, borderColor: goldSoft } : undefined}
+                              >
+                                <span
+                                  className="kit-inc-icon w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                                  style={{ background: isExtra ? goldColor : badgeBg }}
+                                >
+                                  {isExtra ? (
+                                    <Plus style={{ width: 10, height: 10, color: pageBg }} />
+                                  ) : (
+                                    <Check style={{ width: 10, height: 10, color: goldColor }} />
+                                  )}
+                                </span>
+                                <span style={{ color: isExtra ? pageText : pageText70, fontWeight: isExtra ? 700 : 500 }}>
+                                  {item}
+                                </span>
+                              </li>
+                            );
+                          })}
+                        </ul>
                       </div>
 
                       <button

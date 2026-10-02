@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
 import { onSiteReady } from "@/components/ui/LoadingScreen";
+import { ShieldCheck } from "lucide-react";
+import { RESELLER_TITLE, RESELLER_BRAND } from "@/lib/site";
 
 // ─── Kinetic Mask Config Variables ──────────────────────────────────────────
 // You can adjust these variables directly to fine-tune the zoom animation:
@@ -442,6 +444,9 @@ export default function KineticMaskHero({
   const contentOpacity = useTransform(progressVal, (v) =>
     Math.max(0, 1 - Math.min(v, 1.0) * 3),
   );
+  // Reseller caption on the video: fades in over the last stretch of the zoom.
+  const captionOpacity = useTransform(progressVal, [0.9, 1.0], [0, 1], { clamp: true });
+  const captionY = useTransform(progressVal, [0.9, 1.0], [14, 0], { clamp: true });
 
   // Inverted mask: white = cover opaque (video hidden), black = cover transparent (video visible).
   // White text punches holes in the cover, revealing the canvas below.
@@ -643,6 +648,48 @@ export default function KineticMaskHero({
           style={{ color: "#FFE57F" }}
         >
           Scroll to enter the grid
+        </span>
+      </motion.div>
+
+      {/* Reseller caption — sits on the video once the zoom has opened. No
+          backdrop blur: it would re-blur every video frame on phones. */}
+      <motion.div
+        className="absolute z-30 pointer-events-none flex items-center gap-3 rounded-2xl left-4 md:left-10 bottom-[calc(16px+env(safe-area-inset-bottom))] md:bottom-10"
+        style={{
+          opacity: captionOpacity,
+          y: captionY,
+          padding: "12px 18px 12px 12px",
+          background: "rgba(10, 22, 40, 0.74)",
+          border: "1px solid rgba(255, 229, 127, 0.35)",
+          boxShadow: "0 12px 32px rgba(0, 0, 0, 0.35)",
+        }}
+      >
+        <span
+          className="flex items-center justify-center rounded-xl shrink-0"
+          style={{
+            width: 40,
+            height: 40,
+            background: "linear-gradient(135deg, rgba(255,229,127,0.25), rgba(255,145,0,0.12))",
+            border: "1px solid rgba(255, 229, 127, 0.4)",
+          }}
+        >
+          <ShieldCheck style={{ width: 20, height: 20, color: "#FFE57F" }} />
+        </span>
+        <span className="flex flex-col">
+          <span
+            style={{
+              fontSize: "0.62rem",
+              fontWeight: 700,
+              letterSpacing: "0.24em",
+              textTransform: "uppercase",
+              color: "#FFE57F",
+            }}
+          >
+            {RESELLER_TITLE}
+          </span>
+          <span style={{ fontSize: "1.05rem", fontWeight: 800, color: "#ffffff", lineHeight: 1.25 }}>
+            {RESELLER_BRAND}
+          </span>
         </span>
       </motion.div>
     </div>

@@ -14,8 +14,14 @@ export const SITE_NAME = "SunNest Power";
 export const LEGAL_NAME = "SunNest Power LLP";
 export const TAGLINE = "Turning Sunlight Into Savings";
 
+/** Shown in the hero, Products section and footer. Must match the reseller agreement. */
+export const RESELLER_TITLE = "Authorized Reseller";
+export const RESELLER_BRAND = "Reliance Energy";
+export const RESELLER_LINE = `${RESELLER_TITLE} for ${RESELLER_BRAND}`;
+
+// ~150 characters: Google truncates descriptions past roughly 155–160.
 export const SITE_DESCRIPTION =
-  "SunNest Power designs, permits, and commissions high-yield solar systems across India — residential rooftops to industrial captive plants. Turning sunlight into savings.";
+  "Authorized Reseller for Reliance Energy. SunNest Power supplies 3–10 kW solar Mini & Full Kits and installs solar systems across India from Raipur.";
 
 export const PHONE = "+91-9109102662";
 export const EMAIL = "sales@sunnestpower.com";

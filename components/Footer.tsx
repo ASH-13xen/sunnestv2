@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, ShieldCheck } from "lucide-react";
+import { RESELLER_LINE } from "@/lib/site";
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
 const QUICK_LINKS = [
@@ -13,6 +14,11 @@ const QUICK_LINKS = [
   { label: "Pricing",  href: "#pricing" },
   { label: "Contact",  href: "#contact" },
   { label: "FAQ",      href: "#faq" },
+];
+
+const PRODUCTS = [
+  { label: "Mini Kit", detail: "3–10 kW" },
+  { label: "Full Kit", detail: "3–10 kW" },
 ];
 
 const SERVICES = [
@@ -78,8 +84,9 @@ export default function Footer() {
           margin: "0 auto",
           padding: "clamp(56px, 8vh, 80px) clamp(24px, 6vw, 80px) 0",
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: "clamp(32px, 5vw, 56px)",
+          // 150px min keeps all five columns on one row at desktop widths.
+          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+          gap: "clamp(28px, 3.5vw, 44px)",
         }}
       >
 
@@ -178,6 +185,56 @@ export default function Footer() {
               </li>
             ))}
           </ul>
+        </div>
+
+        {/* ── Products ─────────────────────────────────────────────────────── */}
+        <div>
+          <p style={{ fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.25em", textTransform: "uppercase", color: "rgba(255,255,255,0.25)", marginBottom: "18px" }}>
+            Products
+          </p>
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
+            {PRODUCTS.map((p) => (
+              <li key={p.label}>
+                <button
+                  onClick={() => scrollTo("#products")}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.45)",
+                    fontFamily: "var(--font-sans)",
+                    transition: "color 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = gold)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+                >
+                  {p.label}
+                  <span style={{ marginLeft: "8px", fontSize: "0.7rem", color: "rgba(255,255,255,0.28)" }}>{p.detail}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div
+            style={{
+              marginTop: "18px",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "7px 12px",
+              borderRadius: "10px",
+              border: `1px solid ${gold}30`,
+              background: `${gold}0D`,
+              transition: "border-color 0.4s ease, background 0.4s ease",
+            }}
+          >
+            <ShieldCheck style={{ width: "14px", height: "14px", color: gold, flexShrink: 0, transition: "color 0.4s ease" }} />
+            <span style={{ fontSize: "0.7rem", fontWeight: 700, lineHeight: 1.35, color: "rgba(255,255,255,0.7)" }}>
+              {RESELLER_LINE}
+            </span>
+          </div>
         </div>
 
         {/* ── Services ─────────────────────────────────────────────────────── */}
@@ -301,6 +358,10 @@ export default function Footer() {
         >
           <p style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.25)", margin: 0 }}>
             © 2026 SunNest Power LLP. All rights reserved.
+          </p>
+          <p style={{ display: "inline-flex", alignItems: "center", gap: "6px", fontSize: "0.75rem", fontWeight: 600, color: "rgba(255,255,255,0.45)", margin: 0 }}>
+            <ShieldCheck style={{ width: "13px", height: "13px", color: gold, transition: "color 0.4s ease" }} />
+            {RESELLER_LINE}
           </p>
           <div style={{ display: "flex", gap: "24px" }}>
             {["Terms & Conditions", "Privacy Policy"].map((label) => (
