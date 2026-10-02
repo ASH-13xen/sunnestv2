@@ -47,7 +47,7 @@ const CORE_BENEFITS = [
   {
     tempId: 4,
     title: "Stronger Performance",
-    description: "Precision EPC engineering and optimal tilt design matching Maharashtrian geography, boosting energy yields by up to 15%.",
+    description: "Precision EPC engineering and optimal tilt design matching Chhattisgarh's geography, boosting energy yields by up to 15%.",
     icon: Zap,
   },
   {
