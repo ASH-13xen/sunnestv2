@@ -23,9 +23,8 @@ interface Kit {
   includes: string[];
   /** Items this kit adds on top of the Mini Kit — highlighted in the list. */
   extras?: string[];
+  /** Labelled product image, 2:1 — shown whole (never cropped). */
   imageUrl: string;
-  /** CSS object-position for the photo inside the image band. */
-  imagePosition?: string;
 }
 
 // The Mini Kit is the core electrical set; the Full Kit is everything in the
@@ -46,8 +45,7 @@ const KITS: Kit[] = [
     description:
       "The core components of a solar power system — panels, inverter, AC/DC distribution boxes and earthing — sourced together and matched to work as one system.",
     includes: MINI_KIT_ITEMS,
-    imageUrl: "/images/products/mini-kit-project.webp", // rooftop installation
-    imagePosition: "center 70%",
+    imageUrl: "/images/products/mini-kit-components.webp",
   },
   {
     title: "Full Kit",
@@ -57,8 +55,7 @@ const KITS: Kit[] = [
       "Everything in the Mini Kit, plus the mounting structures, cables and connecting accessories — a complete package with every part needed for the installation.",
     includes: MINI_KIT_ITEMS,
     extras: ["Solar Structures", "Cables", "Connecting Accessories"],
-    imageUrl: "/images/products/full-kit-project.webp", // ground-mounted array on structures
-    imagePosition: "center 65%",
+    imageUrl: "/images/products/full-kit-components.webp",
   },
 ];
 
@@ -475,12 +472,19 @@ export default function ProductsSection() {
                 border-color: ${goldColor} !important;
                 box-shadow: ${isNight ? "0 14px 34px rgba(96, 165, 250, 0.14)" : "0 14px 34px rgba(212, 160, 23, 0.12)"} !important;
               }
-              .kit-card:hover .kit-card-img { transform: scale(1.05); }
+              .kit-card:hover .kit-card-img { transform: scale(1.03); }
             }
             .kit-card-img { transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 
-            /* Image band: shorter on short screens so both cards always fit. */
-            .kit-card-media { height: clamp(88px, 22svh, 240px); }
+            /* Image band. The kit images are labelled and 2:1, so they're
+               always shown whole (object-contain). Side by side the band is
+               2:1 too, so the image fills it; it's capped on short screens so
+               both cards fit, and wherever the band is wider than the image
+               (phones, short laptops) a blurred copy fills the edges. */
+            .kit-card-media { aspect-ratio: 2 / 1; max-height: 40svh; }
+            @media (min-width: 768px) and (max-height: 760px) {
+              .kit-card-media { max-height: 34svh; }
+            }
 
             /* Included items: a two-column checklist on wider screens… */
             .kit-card-includes {
@@ -501,7 +505,7 @@ export default function ProductsSection() {
             /* …and wrapped chips on phones, where the list replaces the
                description so both cards still fit on screen. */
             @media (max-width: 767px) {
-              .kit-card-media { height: clamp(64px, 11svh, 120px); }
+              .kit-card-media { aspect-ratio: auto; max-height: none; height: clamp(72px, 13svh, 140px); }
               .kit-card-body { padding: 12px 14px 14px !important; gap: 9px !important; }
               .kit-card-desc { display: none; }
               .kit-card-includes-label { display: none; }
@@ -526,7 +530,7 @@ export default function ProductsSection() {
                 overflow: hidden;
               }
             }
-            /* Short phones (iPhone SE): drop the photo, keep the facts. */
+            /* Short phones (iPhone SE): drop the image, keep the facts. */
             @media (max-width: 767px) and (max-height: 600px) {
               .kit-card-media { display: none; }
             }
@@ -576,23 +580,24 @@ export default function ProductsSection() {
                     {/* Image band */}
                     <div
                       className="kit-card-media relative w-full overflow-hidden shrink-0"
-                      style={{ background: isNight ? "rgba(0,0,0,0.2)" : "rgba(10,22,40,0.03)" }}
                     >
+                      {/* Blurred fill behind the edges — same file and size
+                          as the image below, so it's one download. */}
                       <Image
                         src={kit.imageUrl}
-                        alt={`Solar installation — ${kit.title}`}
+                        alt=""
+                        aria-hidden="true"
                         fill
-                        sizes="(min-width: 768px) 50vw, 100vw"
-                        className="kit-card-img object-cover"
-                        style={{ objectPosition: kit.imagePosition ?? "center" }}
+                        sizes="(min-width: 768px) 45vw, 60vw"
+                        className="object-cover"
+                        style={{ filter: "blur(18px) brightness(0.9)", transform: "scale(1.2)" }}
                       />
-                      <div
-                        className="absolute inset-0"
-                        style={{
-                          background: isNight
-                            ? "linear-gradient(to top, rgba(10,22,40,0.85), transparent 60%)"
-                            : "linear-gradient(to top, rgba(10,22,40,0.45), transparent 60%)",
-                        }}
+                      <Image
+                        src={kit.imageUrl}
+                        alt={`${kit.title} components: ${[...kit.includes, ...(kit.extras ?? [])].join(", ")}`}
+                        fill
+                        sizes="(min-width: 768px) 45vw, 60vw"
+                        className="kit-card-img object-contain"
                       />
                     </div>
 
