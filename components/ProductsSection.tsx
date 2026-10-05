@@ -4,12 +4,10 @@ import { Fragment, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { loadGsap } from "@/lib/gsap";
-import { RESELLER_LINE } from "@/lib/site";
 import {
   Package,
   PackageCheck,
   Check,
-  ShieldCheck,
   ArrowRight,
   type LucideIcon,
 } from "lucide-react";
@@ -116,7 +114,6 @@ export default function ProductsSection() {
   const headingWordRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const paraWordRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const kickerRef = useRef<HTMLSpanElement>(null);
-  const resellerRef = useRef<HTMLDivElement>(null);
   const dividerRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
 
@@ -136,7 +133,6 @@ export default function ProductsSection() {
       const headingWords = headingWordRefs.current.filter(Boolean) as HTMLSpanElement[];
       const paraWords = paraWordRefs.current.filter(Boolean) as HTMLSpanElement[];
       const kicker = kickerRef.current;
-      const reseller = resellerRef.current;
       const divider = dividerRef.current;
 
       st = ScrollTrigger.create({
@@ -209,13 +205,6 @@ export default function ProductsSection() {
             w.style.opacity = String(local);
             w.style.transform = `translateY(${(1 - local) * 60}%)`;
           });
-
-          // Reseller badge lands last, once the paragraph is mostly in.
-          if (reseller) {
-            const local = Math.max(0, Math.min(1, (ease - 0.75) / 0.25));
-            reseller.style.opacity = String(local);
-            reseller.style.transform = `translateY(${(1 - local) * 12}px)`;
-          }
         },
       });
     })();
@@ -421,31 +410,6 @@ export default function ProductsSection() {
               </Fragment>
             ))}
           </p>
-
-          {/* Reliance reseller badge */}
-          <div
-            ref={resellerRef}
-            style={{
-              marginTop: "28px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "10px",
-              padding: "10px 18px",
-              borderRadius: "999px",
-              background: badgeBg,
-              border: `1px solid ${goldSoft}`,
-              color: pageText,
-              fontSize: "clamp(0.72rem, 1.6vw, 0.85rem)",
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              opacity: 0,
-              transition: "color 0.4s ease, background 0.4s ease",
-            }}
-          >
-            <ShieldCheck style={{ width: 18, height: 18, color: goldColor, flexShrink: 0 }} />
-            {RESELLER_LINE}
-          </div>
         </div>
 
         {/* Foreground cards layer */}
