@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useTheme } from "@/context/ThemeContext";
 import { loadGsap } from "@/lib/gsap";
 import { motion } from "framer-motion";
-import { Sun, Clock, FileText, MessageSquare, Shield } from "lucide-react";
+import { Clock, FileText, MessageSquare, Shield } from "lucide-react";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TIME_SLOTS = ["9:00 AM", "10:00 AM", "11:00 AM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM"];
@@ -242,15 +243,20 @@ Details:
 
             {/* Brand */}
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "28px", position: "relative" }}>
-              <div style={{
-                width: "34px", height: "34px", borderRadius: "10px",
-                background: `linear-gradient(135deg, ${gold}, #FF9100)`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: `0 0 18px ${gold}40`, flexShrink: 0,
-                transition: "background 0.4s ease, box-shadow 0.4s ease",
-              }}>
-                <Sun style={{ width: "18px", height: "18px", color: "#0A1628" }} />
-              </div>
+              {/* Same logo tile as the footer */}
+              <Image
+                src="/logo-tile.webp"
+                alt=""
+                width={96}
+                height={96}
+                aria-hidden="true"
+                style={{
+                  width: "34px",
+                  height: "34px",
+                  flexShrink: 0,
+                  filter: "drop-shadow(0 2px 12px rgba(212,160,23,0.28))",
+                }}
+              />
               <span style={{ fontSize: "1.05rem", fontWeight: 900, color: "#ffffff", letterSpacing: "-0.02em" }}>
                 Sun<span style={{ color: gold, transition: "color 0.4s ease" }}>Nest</span>
                 <span style={{ fontSize: "0.72rem", fontWeight: 500, color: "rgba(255,255,255,0.45)", marginLeft: "3px" }}>Power</span>

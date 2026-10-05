@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 import { useTheme } from "@/context/ThemeContext";
 import { onSiteReady } from "@/components/ui/LoadingScreen";
-import { ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import { RESELLER_TITLE, RESELLER_BRAND } from "@/lib/site";
 
 // ─── Kinetic Mask Config Variables ──────────────────────────────────────────
@@ -153,7 +153,7 @@ export default function KineticMaskHero({
     };
 
     if (posterSrc) {
-      poster = new Image();
+      poster = new window.Image(); // the DOM one — `Image` here is next/image
       poster.onload = drawFrame;
       poster.src = posterSrc;
     }
@@ -669,11 +669,11 @@ export default function KineticMaskHero({
           style={{
             width: 40,
             height: 40,
-            background: "linear-gradient(135deg, rgba(255,229,127,0.25), rgba(255,145,0,0.12))",
+            background: "rgba(10, 22, 40, 0.85)",
             border: "1px solid rgba(255, 229, 127, 0.4)",
           }}
         >
-          <ShieldCheck style={{ width: 20, height: 20, color: "#FFE57F" }} />
+          <Image src="/reliance-mark.png" alt="Reliance" width={147} height={137} style={{ width: 26, height: "auto" }} />
         </span>
         <span className="flex flex-col">
           <span

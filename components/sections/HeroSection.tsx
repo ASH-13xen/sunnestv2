@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
-import { ShieldCheck } from "lucide-react";
+import Image from "next/image";
 import KineticMaskHero from "@/components/blocks/kinetic-mask-hero";
 import { RESELLER_TITLE, RESELLER_BRAND } from "@/lib/site";
 
@@ -18,7 +18,7 @@ const RECT_SIDE_MARGIN      = "100px";
 const RECT_BOTTOM_OFFSET    = "-100px";
 const RECT_BORDER_COLOR     = "rgba(255, 255, 255, 0.5)";
 const RECT_Z_INDEX          = 45;
-const LEGEND_GAP_PADDING    = 18; // px of empty border on each side of the reseller label
+const LEGEND_GAP_PADDING    = 12; // px of empty border on each side of the reseller badge
 // ──────────────────────────────────────────────────────────────────────────
 
 // The top border is cut open behind the label: a mask whose top strip is
@@ -89,20 +89,30 @@ export default function HeroSection() {
           }}
         />
 
+        {/* Reseller badge: a gold-edged pill sitting in the gap of the frame */}
         <div
           ref={legendRef}
-          className="absolute flex items-center gap-2.5 whitespace-nowrap"
+          className="absolute flex items-center gap-3 whitespace-nowrap rounded-full"
           style={{
             top: `calc(${RECT_TOP} + ${RECT_BORDER_THICKNESS} / 2)`,
             left: "50%",
             transform: "translate(-50%, -50%)",
-            fontSize: "0.72rem",
-            fontWeight: 700,
-            letterSpacing: "0.28em",
+            padding: "7px 22px 7px 8px",
+            background: "linear-gradient(135deg, rgba(255,229,127,0.16), rgba(10,22,40,0.72) 45%)",
+            border: "1px solid rgba(255, 229, 127, 0.55)",
+            boxShadow: "0 0 28px rgba(255, 200, 80, 0.22), inset 0 1px 0 rgba(255,255,255,0.12)",
+            fontSize: "0.78rem",
+            fontWeight: 800,
+            letterSpacing: "0.24em",
             textTransform: "uppercase",
           }}
         >
-          <ShieldCheck style={{ width: 16, height: 16, color: "#FFE57F", flexShrink: 0 }} />
+          <span
+            className="flex items-center justify-center rounded-full shrink-0"
+            style={{ width: 34, height: 34, background: "rgba(10,22,40,0.85)", border: "1px solid rgba(255,229,127,0.35)" }}
+          >
+            <Image src="/reliance-mark.png" alt="Reliance" width={147} height={137} style={{ width: 22, height: "auto" }} />
+          </span>
           <span style={{ color: "#FFE57F" }}>{RESELLER_TITLE}</span>
           <span style={{ color: "rgba(255,255,255,0.45)" }}>·</span>
           <span style={{ color: "#ffffff" }}>{RESELLER_BRAND}</span>

@@ -9,9 +9,9 @@ import { RESELLER_LINE } from "@/lib/site";
 const QUICK_LINKS = [
   { label: "Home",     href: "#hero" },
   { label: "Solutions",href: "#solutions" },
+  { label: "Products", href: "#products" },
   { label: "About",    href: "#about" },
   { label: "Process",  href: "#process" },
-  { label: "Pricing",  href: "#pricing" },
   { label: "Contact",  href: "#contact" },
   { label: "FAQ",      href: "#faq" },
 ];
@@ -21,13 +21,14 @@ const PRODUCTS = [
   { label: "Full Kit", detail: "3–10 kW" },
 ];
 
+// Each service jumps to the section that covers it.
 const SERVICES = [
-  "Residential Solar",
-  "Commercial Solar",
-  "Institutional Solar",
-  "Industrial Solar",
-  "Net Metering Setup",
-  "After-Sales Service",
+  { label: "Residential Solar",   href: "#solutions" },
+  { label: "Commercial Solar",    href: "#solutions" },
+  { label: "Institutional Solar", href: "#solutions" },
+  { label: "Industrial Solar",    href: "#solutions" },
+  { label: "Net Metering Setup",  href: "#process" },
+  { label: "After-Sales Service", href: "#contact" },
 ];
 
 // ─── Inline social SVGs (no react-icons dep needed) ───────────────────────────
@@ -69,9 +70,11 @@ export default function Footer() {
   const isNight = theme === "night";
   const gold = isNight ? "#60A5FA" : "#D4A017";
 
+  // Same wipe-and-jump the navbar uses (PageTransitionOverlay). A smooth
+  // scroll from the footer would have to travel up through every pinned,
+  // scroll-driven section on the way.
   const scrollTo = (href: string) => {
-    const el = document.querySelector(href);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+    window.dispatchEvent(new CustomEvent("page-transition", { detail: { href } }));
   };
 
   return (
@@ -244,11 +247,26 @@ export default function Footer() {
           </p>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: "10px" }}>
             {SERVICES.map((s) => (
-              <li
-                key={s}
-                style={{ fontSize: "0.82rem", fontWeight: 600, color: "rgba(255,255,255,0.45)" }}
-              >
-                {s}
+              <li key={s.label}>
+                <button
+                  onClick={() => scrollTo(s.href)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    textAlign: "left",
+                    fontSize: "0.82rem",
+                    fontWeight: 600,
+                    color: "rgba(255,255,255,0.45)",
+                    fontFamily: "var(--font-sans)",
+                    transition: "color 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = gold)}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.45)")}
+                >
+                  {s.label}
+                </button>
               </li>
             ))}
           </ul>

@@ -11,7 +11,6 @@ import {
   Check,
   ShieldCheck,
   ArrowRight,
-  Plus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -157,10 +156,13 @@ export default function ProductsSection() {
           const t = Math.max(0, Math.min(1, (p - 0.3) / 0.7));
           const ease = smoothstep(t);
 
-          // Cards stop taking clicks once they start leaving, so they never
-          // swallow a tap meant for the text underneath.
+          // Cards stop taking clicks only once they're mostly faded out (so
+          // they never swallow a tap meant for the text underneath). This
+          // used to switch off at p > 0.15 — while the cards were still fully
+          // visible and not yet moving — which left "Get a quote" dead for
+          // most of the time it was on screen.
           if (gridContainerRef.current) {
-            gridContainerRef.current.style.pointerEvents = p > 0.15 ? "none" : "auto";
+            gridContainerRef.current.style.pointerEvents = ease > 0.6 ? "none" : "auto";
           }
 
           cards.forEach((card, i) => {
@@ -500,7 +502,17 @@ export default function ProductsSection() {
               line-height: 1.35;
               border: 1px solid transparent;
             }
-            .kit-inc-extra { border-radius: 999px; padding: 3px 10px 3px 4px; margin-left: -4px; }
+            .kit-inc-divider {
+              grid-column: 1 / -1;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              margin-top: 4px;
+              font-size: 0.62rem;
+              font-weight: 700;
+              letter-spacing: 0.16em;
+              text-transform: uppercase;
+            }
 
             /* …and wrapped chips on phones, where the list replaces the
                description so both cards still fit on screen. */
@@ -518,7 +530,8 @@ export default function ProductsSection() {
                 border-color: ${tagBorder};
                 background: ${tagBg};
               }
-              .kit-inc-extra { margin-left: 0; }
+              .kit-inc-divider { display: none; }
+              .kit-inc-extra { background: ${badgeBg}; border-color: ${goldSoft}; }
               .kit-inc-icon { width: 14px !important; height: 14px !important; }
             }
             /* Tall phones have room for the description too. */
@@ -669,30 +682,42 @@ export default function ProductsSection() {
                           What&apos;s included
                         </div>
                         <ul className="kit-card-includes" style={{ margin: 0, padding: 0, listStyle: "none" }}>
-                          {[...kit.includes, ...(kit.extras ?? [])].map((item) => {
-                            const isExtra = kit.extras?.includes(item) ?? false;
-                            return (
-                              <li
-                                key={item}
-                                className={isExtra ? "kit-inc kit-inc-extra" : "kit-inc"}
-                                style={isExtra ? { background: badgeBg, borderColor: goldSoft } : undefined}
+                          {kit.includes.map((item) => (
+                            <li key={item} className="kit-inc">
+                              <span
+                                className="kit-inc-icon w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                                style={{ background: badgeBg }}
                               >
-                                <span
-                                  className="kit-inc-icon w-4 h-4 rounded-full flex items-center justify-center shrink-0"
-                                  style={{ background: isExtra ? goldColor : badgeBg }}
-                                >
-                                  {isExtra ? (
-                                    <Plus style={{ width: 10, height: 10, color: pageBg }} />
-                                  ) : (
-                                    <Check style={{ width: 10, height: 10, color: goldColor }} />
-                                  )}
-                                </span>
-                                <span style={{ color: isExtra ? pageText : pageText70, fontWeight: isExtra ? 700 : 500 }}>
-                                  {item}
-                                </span>
-                              </li>
-                            );
-                          })}
+                                <Check style={{ width: 10, height: 10, color: goldColor }} />
+                              </span>
+                              <span style={{ color: pageText70, fontWeight: 500 }}>{item}</span>
+                            </li>
+                          ))}
+
+                          {/* The extras are part of the kit, not add-ons: same
+                              tick as everything else, just under their own
+                              label and in the accent colour. */}
+                          {kit.extras && (
+                            <li
+                              className="kit-inc-divider"
+                              aria-hidden="true"
+                              style={{ color: goldColor }}
+                            >
+                              <span>Also included in the {kit.title}</span>
+                              <span style={{ flex: 1, height: 1, background: `linear-gradient(90deg, ${goldSoft}, transparent)`, opacity: 0.5 }} />
+                            </li>
+                          )}
+                          {kit.extras?.map((item) => (
+                            <li key={item} className="kit-inc kit-inc-extra">
+                              <span
+                                className="kit-inc-icon w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                                style={{ background: goldColor }}
+                              >
+                                <Check strokeWidth={3} style={{ width: 10, height: 10, color: pageBg }} />
+                              </span>
+                              <span style={{ color: pageText, fontWeight: 700 }}>{item}</span>
+                            </li>
+                          ))}
                         </ul>
                       </div>
 
