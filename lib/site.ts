@@ -17,7 +17,6 @@ export const TAGLINE = "Turning Sunlight Into Savings";
 /** Shown in the hero, Products section and footer. Must match the reseller agreement. */
 export const RESELLER_TITLE = "Authorized Reseller";
 export const RESELLER_BRAND = "Reliance Energy";
-export const RESELLER_LINE = `${RESELLER_TITLE} for ${RESELLER_BRAND}`;
 
 // ~150 characters: Google truncates descriptions past roughly 155–160.
 export const SITE_DESCRIPTION =
